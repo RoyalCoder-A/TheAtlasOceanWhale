@@ -10,10 +10,9 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(Catch2)
 
 add_executable(tests logger_test.cpp)
-target_link_libraries(tests PUBLIC logger)
 target_link_libraries(tests PRIVATE Catch2::Catch2WithMain)
 
 
-include(CTest)   # enables CTest integration
-include(Catch)   # provided by Catch2 package
+include(CTest)
+include(Catch)
 catch_discover_tests(tests)
