@@ -18,8 +18,7 @@ namespace TAOW::http_client {
         ~Request() = default;
         Request(const Request& req) = default;
         Request(Request&& req) = default;
-
-        std::string build() const;
+        std::string build_headers() const;
         Protocol get_protocol() const;
 
       private:

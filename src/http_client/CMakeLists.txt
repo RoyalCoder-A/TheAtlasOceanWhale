@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-add_library(http_client STATIC url.cpp)
+add_library(http_client STATIC url.cpp request.cpp)
 add_library(TAOW::http_client ALIAS http_client)
 
 target_include_directories(
