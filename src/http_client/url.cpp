@@ -7,9 +7,9 @@
 
 namespace TAOW::http_client {
 
-    std::string URL::build() const {
+    std::string URL::build_path() const {
         const auto params = this->_build_params();
-        return this->host + this->path + params;
+        return this->path + params;
     }
 
     std::string URL::_build_params() const {

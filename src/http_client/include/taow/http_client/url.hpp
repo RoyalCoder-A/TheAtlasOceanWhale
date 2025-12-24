@@ -19,7 +19,7 @@ namespace TAOW::http_client {
         URL(const URL& obj) = default;
         URL(URL&& obj) = default;
 
-        std::string build() const;
+        std::string build_path() const;
 
         std::string host;
         std::string path;
