@@ -8,13 +8,20 @@ using json = nlohmann::json;
 
 #define SET_SCALAR_PROPERTY(type, name) type name{};
 #define SET_LIST_PROPERTY(type, name) std::vector<type> name{};
+#define SET_OBJ_PROPERTY(type, name) type name{};
+#define SET_LISTOBJ_PROPERTY(type, name) std::vector<type> name{};
 
-#define SET_PROPERTY(type, name, list_scalar) SET_##list_scalar##_PROPERTY(type, name)
+#define SET_PROPERTY(type, name, list_scalar_obj_listobj) SET_##list_scalar_obj_listobj##_PROPERTY(type, name)
 
 #define FILL_SCALAR_PROPERTY(type, name) obj.name = std::move(json_data[#name]);
 #define FILL_LIST_PROPERTY(type, name) obj.name = json_data.at(#name).get<std::vector<type>>();
+#define FILL_OBJ_PROPERTY(type, name) obj.name = type::from_json(json_data[#name]);
+#define FILL_LISTOBJ_PROPERTY(type, name)                                                                              \
+    for (const auto& item : json_data[#name]) {                                                                        \
+        obj.name.push_back(type::from_json(item));                                                                     \
+    }
 
-#define FILL_PROPERTY(type, name, list_scalar) FILL_##list_scalar##_PROPERTY(type, name)
+#define FILL_PROPERTY(type, name, list_scalar_obj_listobj) FILL_##list_scalar_obj_listobj##_PROPERTY(type, name)
 
 #define CREATE_STRUCT_WITH_FROM_JSON(struct_name, INIT_DEFINITIONS)                                                    \
     struct struct_name {                                                                                               \

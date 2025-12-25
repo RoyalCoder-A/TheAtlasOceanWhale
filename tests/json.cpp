@@ -29,4 +29,42 @@ TEST_CASE("Test de serialization") {
             )");
         REQUIRE(res.values[1] == 2);
     }
+
+    SECTION("Test nested object deserialization") {
+#define NESTED_DEFINITION(X) X(TestStruct, nested, OBJ)
+        CREATE_STRUCT_WITH_FROM_JSON(TestStruct, TEST_STRUCT_DEFINITION);
+        CREATE_STRUCT_WITH_FROM_JSON(Nested, NESTED_DEFINITION);
+        auto res = Nested::from_json_str(R"(
+            {
+                "nested": {
+                    "name": "Armin",
+                    "age": 25
+                }
+            }
+            )");
+        REQUIRE(res.nested.name == "Armin");
+        REQUIRE(res.nested.age == 25);
+    }
+
+    SECTION("Test list object deserialization") {
+        CREATE_STRUCT_WITH_FROM_JSON(TestStruct, TEST_STRUCT_DEFINITION);
+#define NESTED_OBJ_DEFINITION(X) X(TestStruct, nested, LISTOBJ)
+        CREATE_STRUCT_WITH_FROM_JSON(NestedObj, NESTED_OBJ_DEFINITION);
+        auto res = NestedObj::from_json_str(R"(
+            {
+                "nested": [
+                    {
+                        "name": "Armin",
+                        "age": 25
+                    },
+                    {
+                        "name": "Amin",
+                        "age": 23
+                    }
+                ]
+            }
+            )");
+        REQUIRE(res.nested[0].name == "Armin");
+        REQUIRE(res.nested[1].name == "Amin");
+    }
 }
