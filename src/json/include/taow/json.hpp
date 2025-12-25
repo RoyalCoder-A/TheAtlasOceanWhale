@@ -18,7 +18,7 @@ using json = nlohmann::json;
 #define FILL_OBJ_PROPERTY(type, name) obj.name = type::from_json(json_data[#name]);
 #define FILL_LISTOBJ_PROPERTY(type, name)                                                                              \
     for (const auto& item : json_data[#name]) {                                                                        \
-        obj.name.push_back(type::from_json(item));                                                                     \
+        obj.name.push_back(type::from_json(std::move(item)));                                                          \
     }
 
 #define FILL_PROPERTY(type, name, list_scalar_obj_listobj) FILL_##list_scalar_obj_listobj##_PROPERTY(type, name)
