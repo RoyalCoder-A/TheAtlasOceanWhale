@@ -100,7 +100,7 @@ TEST_CASE("Test serialization") {
     SECTION("Test normal serialization") {
         CREATE_STRUCT_WITH_TO_JSON(TestStruct, TEST_STRUCT_DEFINITION);
         TestStruct obj{.name = "Armin", .age = 25};
-        auto res = obj.to_json_str();
+        auto       res = obj.to_json_str();
         REQUIRE(res == R"({"age":25,"name":"Armin"})");
     }
 
@@ -108,7 +108,7 @@ TEST_CASE("Test serialization") {
 #define NORMAL_LIST_DEFINITIONS(X) X(int, values, LIST, REQUIRED)
         CREATE_STRUCT_WITH_TO_JSON(NormalList, NORMAL_LIST_DEFINITIONS);
         NormalList obj{.values = {1, 2, 3}};
-        auto res = obj.to_json_str();
+        auto       res = obj.to_json_str();
         REQUIRE(res == R"({"values":[1,2,3]})");
 #undef NORMAL_LIST_DEFINITIONS
     }
@@ -118,7 +118,7 @@ TEST_CASE("Test serialization") {
         CREATE_STRUCT_WITH_TO_JSON(TestStruct, TEST_STRUCT_DEFINITION);
         CREATE_STRUCT_WITH_TO_JSON(Nested, NESTED_DEFINITIONS);
         Nested obj{.nested = TestStruct{.name = "Armin", .age = 25}};
-        auto res = obj.to_json_str();
+        auto   res = obj.to_json_str();
         REQUIRE(res == R"({"nested":{"age":25,"name":"Armin"}})");
 #undef NESTED_DEFINITIONS
     }
@@ -128,7 +128,7 @@ TEST_CASE("Test serialization") {
         CREATE_STRUCT_WITH_TO_JSON(TestStruct, TEST_STRUCT_DEFINITION);
         CREATE_STRUCT_WITH_TO_JSON(NestedArray, NESTED_ARRAY_DEFINITIONS);
         NestedArray obj{.nested = {{.name = "Armin", .age = 25}}};
-        auto res = obj.to_json_str();
+        auto        res = obj.to_json_str();
         REQUIRE(res == R"({"nested":[{"age":25,"name":"Armin"}]})");
 #undef NESTED_ARRAY_DEFINITIONS
     }
@@ -141,7 +141,7 @@ TEST_CASE("Test serialization") {
         CREATE_STRUCT_WITH_TO_JSON(TestStruct, TEST_STRUCT_DEFINITION);
         CREATE_STRUCT_WITH_TO_JSON(OptionalStruct, OPTIONAL_DEFINITIONS);
         OptionalStruct obj{.name = "Armin", .values = {{1, 2, 3}}, .nested = {{{.name = "Amin", .age = 23}}}};
-        auto res = obj.to_json_str();
+        auto           res = obj.to_json_str();
         REQUIRE(res == R"({"name":"Armin","nested":[{"age":23,"name":"Amin"}],"values":[1,2,3]})");
 #undef OPTIONAL_STRUCT_DEFINITION
     }

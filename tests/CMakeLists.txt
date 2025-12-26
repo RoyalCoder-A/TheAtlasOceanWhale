@@ -10,9 +10,10 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(Catch2)
 
-add_executable(tests json.cpp)
+add_executable(tests json.cpp http_client.cpp)
 target_link_libraries(tests PRIVATE Catch2::Catch2WithMain)
 target_link_libraries(tests PRIVATE TAOW::json)
+target_link_libraries(tests PRIVATE TAOW::http_client)
 
 include(CTest)
 include(Catch)
