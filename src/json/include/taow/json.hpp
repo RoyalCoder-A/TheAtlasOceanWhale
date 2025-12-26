@@ -70,12 +70,11 @@ using json = nlohmann::json;
 #define FILL_LIST_JSON_REQUIRED(type, name) res[#name] = this->name;
 #define FILL_OBJ_JSON_REQUIRED(type, name) res[#name] = this->name.to_json();
 #define FILL_LISTOBJ_JSON_REQUIRED(type, name)                                                                         \
-    std::vector<type> tmp_##name{};                                                                                    \
-    for (const auto& item : json_data[#name]) {                                                                        \
-        tmp_##name{};                                                                                                  \
-        .push_back(type::from_json(std::move(item)));                                                                  \
+    std::vector<json> tmp_##name{};                                                                                    \
+    for (const auto& item : this->name) {                                                                              \
+        tmp_##name.push_back(std::move(item.to_json()));                                                               \
     }                                                                                                                  \
-    res[#name] = std::move(tmp_##name{});
+    res[#name] = std::move(tmp_##name);
 
 #define FILL_SCALAR_JSON_OPTIONAL(type, name) res[#name] = this->name;
 #define FILL_LIST_JSON_OPTIONAL(type, name) res[#name] = this->name;
@@ -83,11 +82,11 @@ using json = nlohmann::json;
     res[#name] = this->name ? std::optional<type>{this->name.to_json()} : std::nullopt;
 #define FILL_LISTOBJ_JSON_OPTIONAL(type, name)                                                                         \
     if (this->name) {                                                                                                  \
-        std::vector<type> tmp_##name{};                                                                                \
-        for (const auto& item : json_data[#name]) {                                                                    \
-            tmp_##name.push_back(type::from_json(std::move(item)));                                                    \
+        std::vector<json> tmp_##name{};                                                                                \
+        for (const auto& item : this->name.value()) {                                                                  \
+            tmp_##name.push_back(std::move(item.to_json()));                                                           \
         }                                                                                                              \
-        obj.name = std::optional<std::vector<type>>{std::move(tmp_##name)};                                            \
+        res[#name] = std::move(tmp_##name);                                                                            \
     }
 
 #define FILL_JSON(type, name, list_scalar_obj_listobj, optional_required)                                              \
@@ -104,5 +103,28 @@ using json = nlohmann::json;
         std::string to_json_str() const {                                                                              \
             auto res = this->to_json();                                                                                \
             return res.dump();                                                                                         \
+        }                                                                                                              \
+    }
+
+#define CREATE_FULL_JSON_STRUCT(struct_name, INIT_DEFINITION)                                                          \
+    struct struct_name {                                                                                               \
+        INIT_DEFINITIONS(SET_PROPERTY)                                                                                 \
+        json to_json() const {                                                                                         \
+            json res{};                                                                                                \
+            INIT_DEFINITIONS(FILL_JSON)                                                                                \
+            return res;                                                                                                \
+        }                                                                                                              \
+        std::string to_json_str() const {                                                                              \
+            auto res = this->to_json();                                                                                \
+            return res.dump();                                                                                         \
+        }                                                                                                              \
+        static struct_name from_json_str(std::string json_str) {                                                       \
+            auto json_data = json::parse(json_str);                                                                    \
+            return struct_name::from_json(std::move(json_data));                                                       \
+        }                                                                                                              \
+        static struct_name from_json(json json_data) {                                                                 \
+            struct_name obj{};                                                                                         \
+            INIT_DEFINITIONS(FILL_PROPERTY)                                                                            \
+            return obj;                                                                                                \
         }                                                                                                              \
     }

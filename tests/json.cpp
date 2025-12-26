@@ -122,4 +122,27 @@ TEST_CASE("Test serialization") {
         REQUIRE(res == R"({"nested":{"age":25,"name":"Armin"}})");
 #undef NESTED_DEFINITIONS
     }
+
+    SECTION("Test nested array serialization") {
+#define NESTED_ARRAY_DEFINITIONS(X) X(TestStruct, nested, LISTOBJ, REQUIRED)
+        CREATE_STRUCT_WITH_TO_JSON(TestStruct, TEST_STRUCT_DEFINITION);
+        CREATE_STRUCT_WITH_TO_JSON(NestedArray, NESTED_ARRAY_DEFINITIONS);
+        NestedArray obj{.nested = {{.name = "Armin", .age = 25}}};
+        auto res = obj.to_json_str();
+        REQUIRE(res == R"({"nested":[{"age":25,"name":"Armin"}]})");
+#undef NESTED_ARRAY_DEFINITIONS
+    }
+
+    SECTION("Test optional serialization") {
+#define OPTIONAL_DEFINITIONS(X)                                                                                        \
+    X(std::string, name, SCALAR, REQUIRED)                                                                             \
+    X(int, values, LIST, OPTIONAL)                                                                                     \
+    X(TestStruct, nested, LISTOBJ, OPTIONAL)
+        CREATE_STRUCT_WITH_TO_JSON(TestStruct, TEST_STRUCT_DEFINITION);
+        CREATE_STRUCT_WITH_TO_JSON(OptionalStruct, OPTIONAL_DEFINITIONS);
+        OptionalStruct obj{.name = "Armin", .values = {{1, 2, 3}}, .nested = {{{.name = "Amin", .age = 23}}}};
+        auto res = obj.to_json_str();
+        REQUIRE(res == R"({"name":"Armin","nested":[{"age":23,"name":"Amin"}],"values":[1,2,3]})");
+#undef OPTIONAL_STRUCT_DEFINITION
+    }
 }
