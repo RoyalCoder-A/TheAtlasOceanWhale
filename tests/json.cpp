@@ -2,11 +2,12 @@
 #include "catch2/catch_test_macros.hpp"
 #include <string>
 
-TEST_CASE("Test de serialization") {
-    SECTION("Test normal deserialization") {
 #define TEST_STRUCT_DEFINITION(X)                                                                                      \
     X(std::string, name, SCALAR, REQUIRED)                                                                             \
     X(int, age, SCALAR, REQUIRED)
+
+TEST_CASE("Test de serialization") {
+    SECTION("Test normal deserialization") {
         CREATE_STRUCT_WITH_FROM_JSON(TestStruct, TEST_STRUCT_DEFINITION);
 
         const auto res = TestStruct::from_json_str(R"(
@@ -28,6 +29,7 @@ TEST_CASE("Test de serialization") {
             }
             )");
         REQUIRE(res.values[1] == 2);
+#undef NORMAL_LIST_DEFINITION
     }
 
     SECTION("Test nested object deserialization") {
@@ -44,6 +46,7 @@ TEST_CASE("Test de serialization") {
             )");
         REQUIRE(res.nested.name == "Armin");
         REQUIRE(res.nested.age == 25);
+#undef NESTED_DEFINITION
     }
 
     SECTION("Test list object deserialization") {
@@ -66,6 +69,7 @@ TEST_CASE("Test de serialization") {
             )");
         REQUIRE(res.nested[0].name == "Armin");
         REQUIRE(res.nested[1].name == "Amin");
+#undef NESTED_OBJ_DEFINITION
     }
 
     SECTION("Test optional field deserialization") {
@@ -88,5 +92,34 @@ TEST_CASE("Test de serialization") {
         REQUIRE(res.another_one);
         REQUIRE(res.another_one.value()[0].name == "Amin");
         REQUIRE(res.another_one.value()[0].age == 23);
+#undef OPTIONAL_STRUCT_DEFINITION
+    }
+}
+
+TEST_CASE("Test serialization") {
+    SECTION("Test normal serialization") {
+        CREATE_STRUCT_WITH_TO_JSON(TestStruct, TEST_STRUCT_DEFINITION);
+        TestStruct obj{.name = "Armin", .age = 25};
+        auto res = obj.to_json_str();
+        REQUIRE(res == R"({"age":25,"name":"Armin"})");
+    }
+
+    SECTION("Test normal list serialization") {
+#define NORMAL_LIST_DEFINITIONS(X) X(int, values, LIST, REQUIRED)
+        CREATE_STRUCT_WITH_TO_JSON(NormalList, NORMAL_LIST_DEFINITIONS);
+        NormalList obj{.values = {1, 2, 3}};
+        auto res = obj.to_json_str();
+        REQUIRE(res == R"({"values":[1,2,3]})");
+#undef NORMAL_LIST_DEFINITIONS
+    }
+
+    SECTION("Test nested object serialization") {
+#define NESTED_DEFINITIONS(X) X(TestStruct, nested, OBJ, REQUIRED)
+        CREATE_STRUCT_WITH_TO_JSON(TestStruct, TEST_STRUCT_DEFINITION);
+        CREATE_STRUCT_WITH_TO_JSON(Nested, NESTED_DEFINITIONS);
+        Nested obj{.nested = TestStruct{.name = "Armin", .age = 25}};
+        auto res = obj.to_json_str();
+        REQUIRE(res == R"({"nested":{"age":25,"name":"Armin"}})");
+#undef NESTED_DEFINITIONS
     }
 }
