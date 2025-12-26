@@ -1,15 +1,24 @@
 #pragma once
 
+#include "taow/utils_macros.hpp"
+#include <boost/asio.hpp>
 #include <cstdint>
 #include <optional>
 #include <string>
 #include <vector>
 
 namespace TAOW::http_client {
-enum HttpMethod { GET, POST, PUT, OPTION, DELETE, PATCH };
+
+#define HTTP_METHOD_ENUM_DEFINITION(X)                                                                                 \
+    X(HttpMethod, GET)                                                                                                 \
+    X(HttpMethod, POST)                                                                                                \
+    X(HttpMethod, PUT)                                                                                                 \
+    X(HttpMethod, OPTION)                                                                                              \
+    X(HttpMethod, DELETE)                                                                                              \
+    X(HttpMethod, PATCH)
+CREATE_ENUM_WITH_CASTING(HttpMethod, HTTP_METHOD_ENUM_DEFINITION);
 struct Response {
-    Response(std::vector<uint8_t> raw_bytes, unsigned short status_code)
-        : _raw_bytes(std::move(raw_bytes)), _status_code(status_code) {}
+    Response(std::vector<uint8_t> raw_bytes) : _raw_bytes(std::move(raw_bytes)) {}
     Response(const Response& obj) = delete;
     Response(Response&& obj) = default;
     ~Response() = default;
@@ -19,25 +28,39 @@ struct Response {
 
   private:
     const std::vector<std::uint8_t> _raw_bytes;
-    const unsigned short _status_code;
+    unsigned short _status_code;
 };
 
 struct Client {
     Client(std::string json, std::string host, std::string path, HttpMethod method)
-        : _json(std::move(json)), _host(std::move(host)), _path(std::move(path)), _method(method) {}
+        : _json(std::move(json)), _host(std::move(host)), _path(std::move(path)), _method(method), _socket(_context),
+          _resolver(_context) {}
     Client(std::string host, std::string path, HttpMethod method)
-        : _host(std::move(host)), _path(std::move(path)), _method(method) {}
+        : _host(std::move(host)), _path(std::move(path)), _method(method), _socket(_context), _resolver(_context) {}
     Client(const Client& obj) = delete;
     Client(Client&& obj) = delete;
     ~Client() = default;
 
-    Response call() const;
+    Response call();
 
   private:
-    const std::optional<std::string> _json;
-    const std::string _host;
-    const std::string _path;
-    const HttpMethod _method;
+    std::optional<std::string> _json;
+    std::string _host;
+    std::string _path;
+    HttpMethod _method;
+    boost::asio::io_context _context{};
+    boost::asio::ip::tcp::socket _socket;
+    boost::asio::ip::tcp::resolver _resolver;
+    std::vector<std::uint8_t> _raw_result_bytes{};
+    std::vector<std::uint8_t> _raw_request_bytes{};
+    std::optional<boost::system::error_code> _ec{};
+
+    std::vector<std::uint8_t> _create_headers() const;
+    std::vector<std::uint8_t> _create_body() const;
+    void _create_raw_request();
+    void _handle_connect(const boost::asio::ip::tcp::resolver::results_type& endpoints);
+    void _handle_write();
+    void _handle_read();
 };
 
 } // namespace TAOW::http_client
