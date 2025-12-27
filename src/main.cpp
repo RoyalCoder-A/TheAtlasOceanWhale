@@ -3,6 +3,7 @@
 int main() {
     TAOW::http_client::Client client{"api.restful-api.dev", "/objects", TAOW::http_client::HttpMethod::GET};
     auto res = client.call();
-    std::cout << "Result: " << res.body_text() << std::endl;
+    const auto x = res.body_text();
+    std::cout << "Result: " << x << std::endl;
     return 0;
 }

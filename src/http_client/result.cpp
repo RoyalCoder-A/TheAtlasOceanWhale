@@ -1,5 +1,6 @@
 #include "taow/http_client.hpp"
 #include <algorithm>
+#include <cctype>
 #include <cstddef>
 #include <iterator>
 #include <regex>
@@ -46,11 +47,19 @@ std::unordered_map<std::string, std::string> process_headers(std::string& header
     std::unordered_map<std::string, std::string> result{};
     const auto header_lines = split(header_str, "\r\n");
     for (const auto& header_line : header_lines) {
-        if (header_line.find(":") == std::string::npos) {
+        const auto spliter = header_line.find(":");
+        if (spliter == std::string::npos) {
             continue;
         }
-        const auto key_val = split(header_line, ":");
-        result[trim(key_val[0])] = trim(key_val[1]);
+        auto key = trim(header_line.substr(0, spliter));
+        auto value = trim(header_line.substr(spliter + 1));
+        std::transform(key.begin(), key.end(), key.begin(), [](const auto& c) { return std::tolower(c); });
+        std::transform(value.begin(), value.end(), value.begin(), [](const auto& c) { return std::tolower(c); });
+        if (const auto founded = result.find(key); founded != result.end()) {
+            founded->second = founded->second + "," + value;
+        } else {
+            result[key] = value;
+        }
     }
     return result;
 }
@@ -69,7 +78,22 @@ Response Response::from_raw_bytes(const std::vector<std::uint8_t>& raw_bytes) {
     return Response{status_result.first, std::move(status_result.second), std::move(headers), std::move(body_bytes)};
 }
 
-std::string Response::body_text() const { return std::string{this->_body_bytes.begin(), this->_body_bytes.end()}; }
+std::string Response::body_text() const {
+    const std::string raw_body_str{this->_body_bytes.begin(), this->_body_bytes.end()};
+    if (const auto founded = this->_response_header.find("transfer-encoding");
+        founded != _response_header.end() && founded->second == "chunked") {
+        std::string result{};
+        const auto chunks = split(raw_body_str, "\r\n");
+        for (int i = 0; i <= chunks.size(); i += 2) {
+            if (chunks[i] == "0") {
+                break;
+            }
+            result.append(chunks[i + 1]);
+        }
+        return result;
+    }
+    return raw_body_str;
+}
 void Response::raise_for_status() const {
     if (this->_status_code > 299 || this->_status_code < 200) {
         throw std::runtime_error("Http " + std::to_string(this->_status_code) + " error!");
