@@ -29,7 +29,7 @@ Response Client::call() {
     this->_context.run();
     if (this->_ec)
         throw std::runtime_error(this->_ec->what());
-    return Response{std::move(this->_raw_result_bytes)};
+    return Response::from_raw_bytes(this->_raw_result_bytes);
 }
 
 void Client::_handle_connect(const boost::asio::ip::tcp::resolver::results_type& endpoints) {

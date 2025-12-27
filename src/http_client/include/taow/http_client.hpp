@@ -1,18 +1,14 @@
 #pragma once
 
 #include "taow/utils_macros.hpp"
-#include <algorithm>
 #include <boost/asio.hpp>
 #include <cstdint>
 #include <optional>
-#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 namespace TAOW::http_client {
-
-static const std::string http_header_delimiter = "\r\n\r\n";
 
 #define HTTP_METHOD_ENUM_DEFINITION(X)                                                                                 \
     X(HttpMethod, GET)                                                                                                 \
@@ -24,14 +20,10 @@ static const std::string http_header_delimiter = "\r\n\r\n";
 CREATE_ENUM_WITH_CASTING(HttpMethod, HTTP_METHOD_ENUM_DEFINITION);
 #undef HTTP_METHOD_ENUM_DEFINITION
 struct Response {
-    Response(std::vector<std::uint8_t> raw_bytes) : _raw_bytes(std::move(raw_bytes)) {
-        std::vector<std::uint8_t> del{http_header_delimiter.begin(), http_header_delimiter.end()};
-        auto header_last_it = std::search(_raw_bytes.begin(), _raw_bytes.end(), del.begin(), del.end());
-        if (header_last_it == _raw_bytes.end()) {
-            throw std::runtime_error("Broken response!");
-        }
-        auto body_first_it = header_last_it + del.size();
-    }
+    Response(unsigned int status_code, std::string status_text,
+             std::unordered_map<std::string, std::string> response_header, std::vector<std::uint8_t> body_bytes)
+        : _status_code(status_code), _status_text(std::move(status_text)), _response_header(std::move(response_header)),
+          _body_bytes(std::move(body_bytes)) {}
     Response(const Response& obj) = delete;
     Response(Response&& obj) = default;
     ~Response() = default;
@@ -39,9 +31,11 @@ struct Response {
     void raise_for_status() const;
     std::string body_text() const;
 
+    static Response from_raw_bytes(const std::vector<std::uint8_t>& raw_bytes);
+
   private:
-    const std::vector<std::uint8_t> _raw_bytes;
-    const unsigned short _status_code;
+    const unsigned int _status_code;
+    const std::string _status_text;
     const std::unordered_map<std::string, std::string> _response_header;
     const std::vector<std::uint8_t> _body_bytes;
 };
