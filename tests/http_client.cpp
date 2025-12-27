@@ -8,6 +8,6 @@ TEST_CASE("Http client json test") {
     SECTION("Simple get request") {
         Client client{"api.restful-api.dev", "/objects", HttpMethod::GET};
         auto res = client.call();
-        REQUIRE(res.text() == "Some placeholder!");
+        REQUIRE(res.body_text() == "Some placeholder!");
     }
 }
