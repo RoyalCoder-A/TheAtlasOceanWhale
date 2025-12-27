@@ -1,7 +1,6 @@
 #include "taow/http_client.hpp"
 #include <algorithm>
 #include <cstddef>
-#include <iostream>
 #include <iterator>
 #include <regex>
 #include <stdexcept>
@@ -57,8 +56,6 @@ std::unordered_map<std::string, std::string> process_headers(std::string& header
 }
 
 Response Response::from_raw_bytes(const std::vector<std::uint8_t>& raw_bytes) {
-    const std::string tmp{raw_bytes.begin(), raw_bytes.end()};
-    std::cout << tmp << std::endl;
     const std::string header_delimiter_str{"\r\n\r\n"};
     const std::vector<std::uint8_t> del{header_delimiter_str.begin(), header_delimiter_str.end()};
     const auto end_of_header_it = std::search(raw_bytes.begin(), raw_bytes.end(), del.begin(), del.end());
