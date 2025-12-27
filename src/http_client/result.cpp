@@ -1,6 +1,7 @@
 #include "taow/http_client.hpp"
 #include <algorithm>
 #include <cstddef>
+#include <iostream>
 #include <iterator>
 #include <regex>
 #include <stdexcept>
@@ -18,8 +19,8 @@ std::vector<std::string> split(std::string_view str, std::string_view del) {
     std::size_t end_pos = str.find(del);
     while (end_pos != std::string::npos) {
         result.emplace_back(str.substr(start_pos, end_pos - start_pos));
-        start_pos += del.size();
-        std::size_t end_pos = str.find(del, start_pos);
+        start_pos = end_pos + del.size();
+        end_pos = str.find(del, start_pos);
     }
     result.emplace_back(str.substr(start_pos));
     return result;
@@ -38,7 +39,7 @@ std::pair<unsigned int, std::string> process_header_status_part(std::string& hea
     const auto first_eol = header_str.find("\r\n", second_space + 1);
     const auto status_code = unsigned(std::stoi(header_str.substr(first_space + 1, second_space + 1 - first_space)));
     const auto status_text = header_str.substr(second_space + 1, first_eol + 1 - second_space);
-    header_str.erase(0, first_eol + 4);
+    header_str.erase(0, first_eol + 2);
     return std::pair<unsigned int, std::string>{status_code, status_text};
 }
 
@@ -56,6 +57,8 @@ std::unordered_map<std::string, std::string> process_headers(std::string& header
 }
 
 Response Response::from_raw_bytes(const std::vector<std::uint8_t>& raw_bytes) {
+    const std::string tmp{raw_bytes.begin(), raw_bytes.end()};
+    std::cout << tmp << std::endl;
     const std::string header_delimiter_str{"\r\n\r\n"};
     const std::vector<std::uint8_t> del{header_delimiter_str.begin(), header_delimiter_str.end()};
     const auto end_of_header_it = std::search(raw_bytes.begin(), raw_bytes.end(), del.begin(), del.end());
