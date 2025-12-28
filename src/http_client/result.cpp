@@ -79,9 +79,9 @@ std::vector<std::uint8_t> gunzip(const std::vector<std::uint8_t>& input) {
 
 std::vector<std::uint8_t> handle_decompressing(const std::unordered_map<std::string, std::string>& headers,
                                                const std::vector<std::uint8_t>& input) {
-    if (headers.find("content-encoding") == headers.end())
-        return input;
     std::vector<std::uint8_t> result{input};
+    if (headers.find("content-encoding") == headers.end())
+        return result;
     const auto encodings = split(headers.at("content-encoding"), ",");
     for (auto i = encodings.rbegin(); i != encodings.rend(); ++i) {
         auto encoding_enum = CompressAlgos_from_string(trim(*i));
