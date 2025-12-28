@@ -1,6 +1,7 @@
 #include "taow/http_client.hpp"
 #include <algorithm>
 #include <cctype>
+#include <charconv>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -9,11 +10,40 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
 namespace TAOW::http_client {
+
+std::vector<std::uint8_t> process_chunked_response(const std::vector<uint8_t>& body_bytes) {
+    const std::string_view line_separator = "\r\n";
+    std::vector<std::uint8_t> result{};
+    auto sol = body_bytes.begin();
+    while (true) {
+        auto eol = std::search(sol, body_bytes.end(), line_separator.begin(), line_separator.end());
+        if (eol == body_bytes.end())
+            throw std::runtime_error("No new line found, corrupted chunk response!");
+        std::size_t chunk_size{};
+        const auto chunk_size_part = reinterpret_cast<const char*>(&*std::find(sol, eol, ';'));
+        const auto [ptr, ec] = std::from_chars(reinterpret_cast<const char*>(&*sol), chunk_size_part, chunk_size, 16);
+        if (ec != std::error_code{} || ptr != chunk_size_part)
+            throw std::runtime_error("Can't cast chunk size, corrupted chunk!");
+        const auto data_part_beginning = eol + line_separator.size();
+        if (chunk_size == 0) {
+            const auto data_part_ending =
+                std::search(data_part_beginning, body_bytes.end(), line_separator.begin(), line_separator.end());
+            result.reserve(result.size() + data_part_ending - data_part_beginning);
+            result.insert(result.end(), data_part_beginning, data_part_ending);
+            break;
+        }
+        result.reserve(result.size() + chunk_size);
+        result.insert(result.end(), data_part_beginning, data_part_beginning + chunk_size);
+        sol = data_part_beginning + chunk_size + line_separator.size();
+    }
+    return result;
+}
 
 std::vector<std::string> split(std::string_view str, std::string_view del) {
     std::vector<std::string> result{};
@@ -25,20 +55,6 @@ std::vector<std::string> split(std::string_view str, std::string_view del) {
         end_pos = str.find(del, start_pos);
     }
     result.emplace_back(str.substr(start_pos));
-    return result;
-}
-
-std::vector<std::vector<std::uint8_t>> split(const std::vector<std::uint8_t>& data,
-                                             const std::vector<std::uint8_t>& del) {
-    std::vector<std::vector<std::uint8_t>> result{};
-    auto start_it = data.begin();
-    auto end_it = std::search(start_it, data.end(), del.begin(), del.end());
-    while (end_it != data.end()) {
-        result.emplace_back(start_it, end_it);
-        start_it = end_it + del.size();
-        end_it = std::search(start_it, data.end(), del.begin(), del.end());
-    }
-    result.emplace_back(start_it, end_it);
     return result;
 }
 
@@ -96,20 +112,8 @@ Response Response::from_raw_bytes(const std::vector<std::uint8_t>& raw_bytes) {
 
 std::vector<std::uint8_t> Response::body_bytes() const {
     if (const auto founded = this->_response_header.find("transfer-encoding");
-        founded != _response_header.end() && founded->second == "chunked") {
-        std::vector<std::uint8_t> result{};
-        std::string_view separator = "\r\n";
-        const std::vector<std::uint8_t> separator_bytes{separator.begin(), separator.end()};
-        const auto chunks = split(this->_body_bytes, separator_bytes);
-        for (int i = 0; i <= chunks.size(); i += 2) {
-            int bytes_to_read{};
-            std::memcpy(&bytes_to_read, chunks[i].data(), chunks[i].size());
-            if (bytes_to_read == 0)
-                break;
-            result.reserve(result.size() + bytes_to_read);
-            result.insert(result.end(), chunks[i + 1].begin(), chunks[i + 1].end());
-        }
-        return result;
+        founded != _response_header.end() && founded->second.find("chunked") != std::string::npos) {
+        return process_chunked_response(this->_body_bytes);
     }
     return this->_body_bytes;
 }
