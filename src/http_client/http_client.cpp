@@ -90,7 +90,7 @@ void Client::_create_raw_request() {
 
 std::vector<std::uint8_t> Client::_create_headers() const {
     std::unordered_map<std::string, std::string> headers{
-        {"Host", this->_host}, {"Connection", "close"}, {"Accept", "*/*"}};
+        {"Host", this->_host}, {"Connection", "close"}, {"Accept", "*/*"}, {"Accept-Encoding", "gzip"}};
     if (this->_json) {
         headers["Content-Type"] = "application/json";
     }
