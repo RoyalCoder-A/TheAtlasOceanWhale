@@ -30,6 +30,7 @@ struct Response {
 
     void raise_for_status() const;
     std::string body_text() const;
+    std::vector<std::uint8_t> body_bytes() const;
 
     static Response from_raw_bytes(const std::vector<std::uint8_t>& raw_bytes);
 

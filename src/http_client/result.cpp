@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <cctype>
 #include <cstddef>
+#include <cstdint>
+#include <cstring>
 #include <iterator>
 #include <regex>
 #include <stdexcept>
@@ -23,6 +25,20 @@ std::vector<std::string> split(std::string_view str, std::string_view del) {
         end_pos = str.find(del, start_pos);
     }
     result.emplace_back(str.substr(start_pos));
+    return result;
+}
+
+std::vector<std::vector<std::uint8_t>> split(const std::vector<std::uint8_t>& data,
+                                             const std::vector<std::uint8_t>& del) {
+    std::vector<std::vector<std::uint8_t>> result{};
+    auto start_it = data.begin();
+    auto end_it = std::search(start_it, data.end(), del.begin(), del.end());
+    while (end_it != data.end()) {
+        result.emplace_back(start_it, end_it);
+        start_it = end_it + del.size();
+        end_it = std::search(start_it, data.end(), del.begin(), del.end());
+    }
+    result.emplace_back(start_it, end_it);
     return result;
 }
 
@@ -78,21 +94,29 @@ Response Response::from_raw_bytes(const std::vector<std::uint8_t>& raw_bytes) {
     return Response{status_result.first, std::move(status_result.second), std::move(headers), std::move(body_bytes)};
 }
 
-std::string Response::body_text() const {
-    const std::string raw_body_str{this->_body_bytes.begin(), this->_body_bytes.end()};
+std::vector<std::uint8_t> Response::body_bytes() const {
     if (const auto founded = this->_response_header.find("transfer-encoding");
         founded != _response_header.end() && founded->second == "chunked") {
-        std::string result{};
-        const auto chunks = split(raw_body_str, "\r\n");
+        std::vector<std::uint8_t> result{};
+        std::string_view separator = "\r\n";
+        const std::vector<std::uint8_t> separator_bytes{separator.begin(), separator.end()};
+        const auto chunks = split(this->_body_bytes, separator_bytes);
         for (int i = 0; i <= chunks.size(); i += 2) {
-            if (chunks[i] == "0") {
+            int bytes_to_read{};
+            std::memcpy(&bytes_to_read, chunks[i].data(), chunks[i].size());
+            if (bytes_to_read == 0)
                 break;
-            }
-            result.append(chunks[i + 1]);
+            result.reserve(result.size() + bytes_to_read);
+            result.insert(result.end(), chunks[i + 1].begin(), chunks[i + 1].end());
         }
         return result;
     }
-    return raw_body_str;
+    return this->_body_bytes;
+}
+
+std::string Response::body_text() const {
+    const auto body_bytes = this->body_bytes();
+    return std::string{body_bytes.begin(), body_bytes.end()};
 }
 void Response::raise_for_status() const {
     if (this->_status_code > 299 || this->_status_code < 200) {
