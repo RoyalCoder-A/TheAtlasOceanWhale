@@ -19,6 +19,8 @@ namespace TAOW::http_client {
     X(HttpMethod, PATCH)
 CREATE_ENUM_WITH_CASTING(HttpMethod, HTTP_METHOD_ENUM_DEFINITION);
 #undef HTTP_METHOD_ENUM_DEFINITION
+
+std::string encode_url(std::string_view input);
 struct Response {
     Response(unsigned int status_code, std::string status_text,
              std::unordered_map<std::string, std::string> response_header, std::vector<std::uint8_t> body_bytes)
