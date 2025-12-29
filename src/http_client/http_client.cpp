@@ -1,4 +1,5 @@
 #include "taow/http_client.hpp"
+#include "taow/string_utils.hpp"
 #include <boost/asio.hpp>
 #include <cstddef>
 #include <cstdint>
@@ -101,6 +102,10 @@ std::vector<std::uint8_t> Client::_create_headers() const {
         headers["Content-Length"] = std::to_string(this->_content_length);
         headers["Content-Type"] = "application/x-www-form-urlencoded";
     }
+    if (this->_multipart) {
+        headers["Content-Length"] = std::to_string(this->_content_length);
+        headers["Content-Type"] = "multipart/form-data; boundary=" + this->_multipart_boundary;
+    }
     std::string result{};
     result += HttpMethod_to_string(this->_method);
     result += " " + this->_url.get_path() + " HTTP/1.1\r\n";
@@ -111,13 +116,17 @@ std::vector<std::uint8_t> Client::_create_headers() const {
     return std::vector<std::uint8_t>{result.begin(), result.end()};
 }
 
-std::vector<std::uint8_t> Client::_create_body() const {
+std::vector<std::uint8_t> Client::_create_body() {
     if (this->_json) {
         return std::vector<std::uint8_t>{this->_json.value().begin(), this->_json.value().end()};
     }
     if (this->_form_request) {
         const auto form_value = this->_form_request.value().to_string();
         return std::vector<std::uint8_t>{form_value.begin(), form_value.end()};
+    }
+    if (this->_multipart) {
+        this->_multipart_boundary = utils::random_string(16);
+        return this->_multipart.value().as_http_body(this->_multipart_boundary);
     }
     return std::vector<std::uint8_t>{};
 }

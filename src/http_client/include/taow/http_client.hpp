@@ -1,6 +1,7 @@
 #pragma once
 
 #include "taow/form_encoding.hpp"
+#include "taow/multipart.hpp"
 #include "taow/url.hpp"
 #include "taow/utils_macros.hpp"
 #include <boost/asio.hpp>
@@ -50,6 +51,8 @@ struct Client {
     Client(FormRequest req, URL url, HttpMethod method)
         : _form_request(std::move(req)), _url(std::move(url)), _method(method), _socket(_context), _resolver(_context) {
     }
+    Client(Multipart req, URL url, HttpMethod method)
+        : _multipart(std::move(req)), _url(std::move(url)), _method(method), _socket(_context), _resolver(_context) {}
     Client(URL url, HttpMethod method)
         : _url(std::move(url)), _method(method), _socket(_context), _resolver(_context) {}
     Client(const Client& obj) = delete;
@@ -61,6 +64,7 @@ struct Client {
   private:
     std::optional<std::string> _json;
     std::optional<FormRequest> _form_request;
+    std::optional<Multipart> _multipart;
     URL _url;
     HttpMethod _method;
     boost::asio::io_context _context{};
@@ -70,9 +74,10 @@ struct Client {
     std::vector<std::uint8_t> _raw_request_bytes{};
     std::optional<boost::system::error_code> _ec{};
     std::size_t _content_length;
+    std::string _multipart_boundary;
 
     std::vector<std::uint8_t> _create_headers() const;
-    std::vector<std::uint8_t> _create_body() const;
+    std::vector<std::uint8_t> _create_body();
     void _create_raw_request();
     void _handle_connect(const boost::asio::ip::tcp::resolver::results_type& endpoints);
     void _handle_write();
