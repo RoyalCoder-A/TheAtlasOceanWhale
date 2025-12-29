@@ -80,19 +80,26 @@ void Client::_handle_read() {
 }
 
 void Client::_create_raw_request() {
-    auto header = this->_create_headers();
     auto body = this->_create_body();
+    this->_content_length = body.size();
+    auto header = this->_create_headers();
     this->_raw_request_bytes.clear();
     this->_raw_request_bytes.reserve(header.size() + body.size());
     this->_raw_request_bytes.insert(this->_raw_request_bytes.end(), header.begin(), header.end());
     this->_raw_request_bytes.insert(this->_raw_request_bytes.end(), body.begin(), body.end());
+    std::string tmp{this->_raw_request_bytes.begin(), this->_raw_request_bytes.end()};
 }
 
 std::vector<std::uint8_t> Client::_create_headers() const {
     std::unordered_map<std::string, std::string> headers{
         {"Host", this->_host}, {"Connection", "close"}, {"Accept", "*/*"}, {"Accept-Encoding", "gzip"}};
     if (this->_json) {
+        headers["Content-Length"] = std::to_string(this->_content_length);
         headers["Content-Type"] = "application/json";
+    }
+    if (this->_form_request) {
+        headers["Content-Length"] = std::to_string(this->_content_length);
+        headers["Content-Type"] = "application/x-www-form-urlencoded";
     }
     std::string result{};
     result += HttpMethod_to_string(this->_method);
@@ -107,6 +114,10 @@ std::vector<std::uint8_t> Client::_create_headers() const {
 std::vector<std::uint8_t> Client::_create_body() const {
     if (this->_json) {
         return std::vector<std::uint8_t>{this->_json.value().begin(), this->_json.value().end()};
+    }
+    if (this->_form_request) {
+        const auto form_value = this->_form_request.value().to_string();
+        return std::vector<std::uint8_t>{form_value.begin(), form_value.end()};
     }
     return std::vector<std::uint8_t>{};
 }

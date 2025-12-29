@@ -1,7 +1,9 @@
 #pragma once
 
+#include "taow/form_encoding.hpp"
 #include "taow/utils_macros.hpp"
 #include <boost/asio.hpp>
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -19,8 +21,6 @@ namespace TAOW::http_client {
     X(HttpMethod, PATCH)
 CREATE_ENUM_WITH_CASTING(HttpMethod, HTTP_METHOD_ENUM_DEFINITION);
 #undef HTTP_METHOD_ENUM_DEFINITION
-
-std::string encode_url(std::string_view input);
 struct Response {
     Response(unsigned int status_code, std::string status_text,
              std::unordered_map<std::string, std::string> response_header, std::vector<std::uint8_t> body_bytes)
@@ -47,6 +47,9 @@ struct Client {
     Client(std::string json, std::string host, std::string path, HttpMethod method)
         : _json(std::move(json)), _host(std::move(host)), _path(std::move(path)), _method(method), _socket(_context),
           _resolver(_context) {}
+    Client(FormRequest req, std::string host, std::string path, HttpMethod method)
+        : _form_request(std::move(req)), _host(std::move(host)), _path(std::move(path)), _method(method),
+          _socket(_context), _resolver(_context) {}
     Client(std::string host, std::string path, HttpMethod method)
         : _host(std::move(host)), _path(std::move(path)), _method(method), _socket(_context), _resolver(_context) {}
     Client(const Client& obj) = delete;
@@ -57,6 +60,7 @@ struct Client {
 
   private:
     std::optional<std::string> _json;
+    std::optional<FormRequest> _form_request;
     std::string _host;
     std::string _path;
     HttpMethod _method;
@@ -66,6 +70,7 @@ struct Client {
     std::vector<std::uint8_t> _raw_result_bytes{};
     std::vector<std::uint8_t> _raw_request_bytes{};
     std::optional<boost::system::error_code> _ec{};
+    std::size_t _content_length;
 
     std::vector<std::uint8_t> _create_headers() const;
     std::vector<std::uint8_t> _create_body() const;
