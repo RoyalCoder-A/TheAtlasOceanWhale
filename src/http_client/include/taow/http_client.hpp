@@ -1,6 +1,7 @@
 #pragma once
 
 #include "taow/form_encoding.hpp"
+#include "taow/url.hpp"
 #include "taow/utils_macros.hpp"
 #include <boost/asio.hpp>
 #include <cstddef>
@@ -44,14 +45,13 @@ struct Response {
 };
 
 struct Client {
-    Client(std::string json, std::string host, std::string path, HttpMethod method)
-        : _json(std::move(json)), _host(std::move(host)), _path(std::move(path)), _method(method), _socket(_context),
-          _resolver(_context) {}
-    Client(FormRequest req, std::string host, std::string path, HttpMethod method)
-        : _form_request(std::move(req)), _host(std::move(host)), _path(std::move(path)), _method(method),
-          _socket(_context), _resolver(_context) {}
-    Client(std::string host, std::string path, HttpMethod method)
-        : _host(std::move(host)), _path(std::move(path)), _method(method), _socket(_context), _resolver(_context) {}
+    Client(std::string json, URL url, HttpMethod method)
+        : _json(std::move(json)), _url(std::move(url)), _method(method), _socket(_context), _resolver(_context) {}
+    Client(FormRequest req, URL url, HttpMethod method)
+        : _form_request(std::move(req)), _url(std::move(url)), _method(method), _socket(_context), _resolver(_context) {
+    }
+    Client(URL url, HttpMethod method)
+        : _url(std::move(url)), _method(method), _socket(_context), _resolver(_context) {}
     Client(const Client& obj) = delete;
     Client(Client&& obj) = delete;
     ~Client() = default;
@@ -61,8 +61,7 @@ struct Client {
   private:
     std::optional<std::string> _json;
     std::optional<FormRequest> _form_request;
-    std::string _host;
-    std::string _path;
+    URL _url;
     HttpMethod _method;
     boost::asio::io_context _context{};
     boost::asio::ip::tcp::socket _socket;

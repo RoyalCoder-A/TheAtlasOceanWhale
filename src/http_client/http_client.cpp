@@ -17,7 +17,7 @@ Response Client::call() {
     this->_ec = std::nullopt;
     this->_raw_result_bytes = std::vector<std::uint8_t>{};
     this->_resolver.async_resolve(
-        this->_host, "http",
+        this->_url.get_host(), "http",
         [this](const boost::system::error_code& ec, const boost::asio::ip::tcp::resolver::results_type& endpoints) {
             if (ec) {
                 this->_ec = ec;
@@ -92,7 +92,7 @@ void Client::_create_raw_request() {
 
 std::vector<std::uint8_t> Client::_create_headers() const {
     std::unordered_map<std::string, std::string> headers{
-        {"Host", this->_host}, {"Connection", "close"}, {"Accept", "*/*"}, {"Accept-Encoding", "gzip"}};
+        {"Host", this->_url.get_host()}, {"Connection", "close"}, {"Accept", "*/*"}, {"Accept-Encoding", "gzip"}};
     if (this->_json) {
         headers["Content-Length"] = std::to_string(this->_content_length);
         headers["Content-Type"] = "application/json";
@@ -103,7 +103,7 @@ std::vector<std::uint8_t> Client::_create_headers() const {
     }
     std::string result{};
     result += HttpMethod_to_string(this->_method);
-    result += " " + this->_path + " HTTP/1.1\r\n";
+    result += " " + this->_url.get_path() + " HTTP/1.1\r\n";
     for (const auto& item : headers) {
         result += item.first + ": " + item.second + "\r\n";
     }
