@@ -4,9 +4,6 @@ add_library(TAOW::json ALIAS taow_json)
 
 target_include_directories(taow_json INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-include(FetchContent)
-
-FetchContent_Declare(ex_json URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz)
-FetchContent_MakeAvailable(ex_json)
+find_package(nlohmann_json REQUIRED)
 
 target_link_libraries(taow_json INTERFACE nlohmann_json::nlohmann_json)
