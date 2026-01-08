@@ -3,12 +3,14 @@
 #include <string>
 #include <vector>
 
-#define COMMAND_TEST_DEFINITION(X)                                                                                     \
-    X(device, ARG, STRING)                                                                                             \
-    X(test, ARG, STRING)
+#define TEST_COMMAND_OPTIONS(X)                                                                                        \
+    X(device, STRING)                                                                                                  \
+    X(test, INT)
 
-CLI_COMMAND(test_command, COMMAND_TEST_DEFINITION) {
-    std::cout << "device is " << data.device << std::endl;
+#define TEST_COMMAND_ARGS(X) X(name, 0, STRING)
+
+CLI_COMMAND(test_command, TEST_COMMAND_OPTIONS, TEST_COMMAND_ARGS) {
+    std::cout << "device is " << (options.device ? options.device.value() : "NA") << std::endl;
     return 0;
 };
 
