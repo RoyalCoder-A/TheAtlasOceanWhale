@@ -1,7 +1,7 @@
+#include "taow/cli_builder.hpp"
 #include "taow/cli_builder_macros.hpp"
 #include <iostream>
 #include <string>
-#include <vector>
 
 #define TEST_COMMAND_OPTIONS(X)                                                                                        \
     X(device, STRING)                                                                                                  \
@@ -14,10 +14,4 @@ CLI_COMMAND(test_command, TEST_COMMAND_OPTIONS, TEST_COMMAND_ARGS) {
     return 0;
 };
 
-int main(int argc, char* argv[]) {
-    std::vector<std::string> args{argv + 1, argv + argc};
-    for (const auto& val : args) {
-        std::cout << val << std::endl;
-    }
-    return 0;
-}
+int main(int argc, char* argv[]) { return TAOW::cli_builder::CliRegistry::run(argc, argv); }
