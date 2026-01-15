@@ -1,5 +1,6 @@
 #include "taow/cli_builder.hpp"
 #include <cstddef>
+#include <iostream>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -77,6 +78,9 @@ int CliRegistry::run(int argc, char** argv) {
         throw std::runtime_error("No args passed!");
     }
     std::vector<std::string> raw_args{argv + 1, argv + argc};
+    for (const auto& [k, v] : CliRegistry::commands) {
+        std::cout << k << std::endl;
+    }
     auto found_command = CliRegistry::commands.find(raw_args[0]);
     if (found_command == CliRegistry::commands.end()) {
         throw std::runtime_error("No command found for " + raw_args[0]);

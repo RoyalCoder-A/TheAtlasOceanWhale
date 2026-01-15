@@ -50,10 +50,10 @@
                                   const TAOW::cli_builder::CliBuilderArgBase& args) {                                  \
                 return name(static_cast<const name##_options&>(options), static_cast<const name##_args&>(args));       \
             };                                                                                                         \
-            TAOW::cli_builder::CliRegistry::commands[#name] =                                                          \
-                TAOW::cli_builder::CliCommandPack{std::move(options_ptr), std::move(args_ptr), wrapper};               \
+            TAOW::cli_builder::CliRegistry::commands.try_emplace(#name, std::move(options_ptr), std::move(args_ptr),   \
+                                                                 std::move(wrapper));                                  \
         }                                                                                                              \
-        static Register_##name registerer_##name##_instance;                                                           \
     };                                                                                                                 \
+    static Register_##name registerer_##name##_instance;                                                               \
     }                                                                                                                  \
     static int name(const name##_options& options, const name##_args& args)

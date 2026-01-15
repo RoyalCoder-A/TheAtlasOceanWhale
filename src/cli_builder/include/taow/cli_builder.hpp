@@ -35,7 +35,7 @@ struct CliCommandPack {
 };
 
 struct CliRegistry {
-    static std::unordered_map<std::string, CliCommandPack> commands;
+    inline static std::unordered_map<std::string, CliCommandPack> commands;
 
     static int run(int argc, char* argv[]);
 };
