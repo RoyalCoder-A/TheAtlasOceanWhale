@@ -15,3 +15,19 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 enable_testing()
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tests)
+
+install(
+    TARGETS taow_cli_builder taow_json taow_http_client taow_utils
+    EXPORT TAOW
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+    RUNTIME DESTINATION lib
+    INCLUDES DESTINATION include
+)
+
+install(
+    EXPORT TAOW
+    NAMESPACE TAOW::
+    FILE TAOW.cmake
+    DESTINATION lib/cmake/TAOW
+)
