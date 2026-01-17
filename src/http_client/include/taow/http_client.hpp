@@ -1,11 +1,13 @@
 #pragma once
 
+#include "boost/asio/steady_timer.hpp"
 #include "taow/form_encoding.hpp"
 #include "taow/multipart.hpp"
 #include "taow/url.hpp"
 #include "taow/utils_macros.hpp"
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -49,7 +51,7 @@ struct Response {
 struct Client {
     Client(URL url, HttpMethod method)
         : _url(std::move(url)), _method(method), _socket(_context), _resolver(_context),
-          _ssl_context(boost::asio::ssl::context::sslv23), _ssl_socket(_context, _ssl_context) {
+          _ssl_context(boost::asio::ssl::context::sslv23), _ssl_socket(_context, _ssl_context), _timer{_context} {
         _ssl_context.set_default_verify_paths();
     }
     Client(std::string json, URL url, HttpMethod method) : Client(std::move(url), method) { _json = std::move(json); }
@@ -63,7 +65,7 @@ struct Client {
     Client(Client&& obj) = delete;
     ~Client() = default;
 
-    Response call();
+    Response call(std::chrono::milliseconds timeout = std::chrono::seconds{10});
 
   private:
     std::optional<std::string> _json;
@@ -81,6 +83,7 @@ struct Client {
     std::optional<boost::system::error_code> _ec{};
     std::size_t _content_length;
     std::string _multipart_boundary;
+    boost::asio::steady_timer _timer;
 
     std::vector<std::uint8_t> _create_headers() const;
     std::vector<std::uint8_t> _create_body();

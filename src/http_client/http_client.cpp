@@ -4,6 +4,7 @@
 #include "taow/url.hpp"
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -15,11 +16,21 @@
 
 namespace TAOW::http_client {
 
-Response Client::call() {
+Response Client::call(std::chrono::milliseconds timeout) {
     this->_socket.close();
     this->_context.restart();
     this->_ec = std::nullopt;
     this->_raw_result_bytes = std::vector<std::uint8_t>{};
+    _timer.expires_after(timeout);
+    _timer.async_wait([this](const boost::system::error_code& ec) {
+        if (!ec) {
+            this->_ec = boost::asio::error::timed_out;
+            boost::system::error_code ignored;
+            auto _ = this->_socket.close(ignored);
+            auto __ = this->_ssl_socket.lowest_layer().close(ignored);
+            this->_resolver.cancel();
+        }
+    });
     this->_resolver.async_resolve(
         this->_url.get_host(), URLSchema_to_string(this->_url.get_schema()),
         [this](const boost::system::error_code& ec, const boost::asio::ip::tcp::resolver::results_type& endpoints) {
@@ -31,8 +42,9 @@ Response Client::call() {
             this->_handle_connect(endpoints);
         });
     this->_context.run();
+    _timer.cancel();
     if (this->_ec)
-        throw std::runtime_error(this->_ec->what());
+        throw std::runtime_error(this->_ec->message());
     return Response::from_raw_bytes(this->_raw_result_bytes);
 }
 

@@ -4,7 +4,6 @@
 #include "taow/utils_macros.hpp"
 #include <optional>
 #include <string>
-#include <string_view>
 namespace TAOW::http_client {
 
 #define URL_SCHEMA_ENUM_DEFINITION(X)                                                                                  \
