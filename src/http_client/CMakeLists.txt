@@ -15,4 +15,7 @@ target_include_directories(taow_http_client PUBLIC ${Boost_INCLUDE_DIRS})
 find_package(ZLIB REQUIRED)
 target_link_libraries(taow_http_client PUBLIC ZLIB::ZLIB)
 
+find_package(OpenSSL REQUIRED)
+target_link_libraries(taow_http_client PUBLIC openssl::openssl)
+
 target_link_libraries(taow_http_client PUBLIC TAOW::utils)

@@ -11,6 +11,7 @@ class TAOWRecipe(ConanFile):
         self.requires("nlohmann_json/3.12.0")
         self.requires("boost/1.90.0")
         self.requires("zlib/1.3.1")
+        self.requires("openssl/3.6.0")
 
     def layout(self):
         cmake_layout(self)

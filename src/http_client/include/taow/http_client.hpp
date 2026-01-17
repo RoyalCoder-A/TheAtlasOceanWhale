@@ -5,6 +5,7 @@
 #include "taow/url.hpp"
 #include "taow/utils_macros.hpp"
 #include <boost/asio.hpp>
+#include <boost/asio/ssl.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -46,15 +47,18 @@ struct Response {
 };
 
 struct Client {
-    Client(std::string json, URL url, HttpMethod method)
-        : _json(std::move(json)), _url(std::move(url)), _method(method), _socket(_context), _resolver(_context) {}
-    Client(FormRequest req, URL url, HttpMethod method)
-        : _form_request(std::move(req)), _url(std::move(url)), _method(method), _socket(_context), _resolver(_context) {
-    }
-    Client(Multipart req, URL url, HttpMethod method)
-        : _multipart(std::move(req)), _url(std::move(url)), _method(method), _socket(_context), _resolver(_context) {}
     Client(URL url, HttpMethod method)
-        : _url(std::move(url)), _method(method), _socket(_context), _resolver(_context) {}
+        : _url(std::move(url)), _method(method), _socket(_context), _resolver(_context),
+          _ssl_context(boost::asio::ssl::context::sslv23), _ssl_socket(_context, _ssl_context) {
+        _ssl_context.set_default_verify_paths();
+    }
+    Client(std::string json, URL url, HttpMethod method) : Client(std::move(url), method) { _json = std::move(json); }
+    Client(FormRequest req, URL url, HttpMethod method) : Client(std::move(url), method) {
+        _form_request = std::move(req);
+    }
+    Client(Multipart req, URL url, HttpMethod method) : Client(std::move(url), method) {
+        _multipart.emplace(std::move(req));
+    }
     Client(const Client& obj) = delete;
     Client(Client&& obj) = delete;
     ~Client() = default;
@@ -69,6 +73,8 @@ struct Client {
     HttpMethod _method;
     boost::asio::io_context _context{};
     boost::asio::ip::tcp::socket _socket;
+    boost::asio::ssl::context _ssl_context;
+    boost::asio::ssl::stream<boost::asio::ip::tcp::socket> _ssl_socket;
     boost::asio::ip::tcp::resolver _resolver;
     std::vector<std::uint8_t> _raw_result_bytes{};
     std::vector<std::uint8_t> _raw_request_bytes{};

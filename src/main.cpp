@@ -1,17 +1,11 @@
-#include "taow/cli_builder.hpp"
-#include "taow/cli_builder_macros.hpp"
+#include "taow/http_client.hpp"
+#include "taow/url.hpp"
 #include <iostream>
-#include <string>
-
-#define TEST_COMMAND_OPTIONS(X)                                                                                        \
-    X(device, STRING)                                                                                                  \
-    X(test, INT)
-
-#define TEST_COMMAND_ARGS(X) X(name, 0, STRING)
-
-CLI_COMMAND(test_command, TEST_COMMAND_OPTIONS, TEST_COMMAND_ARGS) {
-    std::cout << "device is " << (options.device ? options.device.value() : "NA") << std::endl;
+int main() {
+    std::cout << "Starting process..." << std::endl;
+    TAOW::http_client::Client client{TAOW::http_client::URL{TAOW::http_client::URLSchema::https, "api.myip.com", "/"},
+                                     TAOW::http_client::HttpMethod::GET};
+    auto result = client.call();
+    std::cout << result.body_text() << std::endl;
     return 0;
-};
-
-int main(int argc, char* argv[]) { return TAOW::cli_builder::CliRegistry::run(argc, argv); }
+}

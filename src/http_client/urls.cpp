@@ -1,4 +1,5 @@
 #include "taow/url.hpp"
+#include <string>
 
 namespace TAOW::http_client {
 
@@ -11,5 +12,7 @@ std::string URL::get_path() const {
     }
     return base_path;
 }
+
+URLSchema URL::get_schema() const { return this->_url_schema; }
 
 } // namespace TAOW::http_client

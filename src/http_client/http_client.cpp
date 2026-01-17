@@ -1,6 +1,9 @@
 #include "taow/http_client.hpp"
+#include "boost/asio/ssl/verify_mode.hpp"
 #include "taow/string_utils.hpp"
+#include "taow/url.hpp"
 #include <boost/asio.hpp>
+#include <boost/asio/ssl.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -18,7 +21,7 @@ Response Client::call() {
     this->_ec = std::nullopt;
     this->_raw_result_bytes = std::vector<std::uint8_t>{};
     this->_resolver.async_resolve(
-        this->_url.get_host(), "http",
+        this->_url.get_host(), URLSchema_to_string(this->_url.get_schema()),
         [this](const boost::system::error_code& ec, const boost::asio::ip::tcp::resolver::results_type& endpoints) {
             if (ec) {
                 this->_ec = ec;
@@ -35,12 +38,25 @@ Response Client::call() {
 
 void Client::_handle_connect(const boost::asio::ip::tcp::resolver::results_type& endpoints) {
     boost::asio::async_connect(
-        this->_socket, endpoints,
+        this->_url.get_schema() == URLSchema::http ? this->_socket : this->_ssl_socket.lowest_layer(), endpoints,
         [this](const boost::system::error_code& ec, const boost::asio::ip::tcp::endpoint& endpoints) {
             if (ec) {
                 this->_ec = ec;
                 this->_context.stop();
                 return;
+            }
+            if (this->_url.get_schema() == URLSchema::https) {
+                if (!SSL_set_tlsext_host_name(_ssl_socket.native_handle(), _url.get_host().c_str())) {
+                    boost::system::error_code error{static_cast<int>(::ERR_get_error()),
+                                                    boost::asio::error::get_ssl_category()};
+                    this->_ec = error;
+                    this->_context.stop();
+                    return;
+                }
+                this->_ssl_socket.lowest_layer().set_option(boost::asio::ip::tcp::no_delay(true));
+                this->_ssl_socket.set_verify_mode(boost::asio::ssl::verify_peer);
+                this->_ssl_socket.set_verify_callback(boost::asio::ssl::host_name_verification(this->_url.get_host()));
+                this->_ssl_socket.handshake(boost::asio::ssl::stream<boost::asio::ip::tcp::socket>::client);
             }
             this->_handle_write();
         });
@@ -48,36 +64,43 @@ void Client::_handle_connect(const boost::asio::ip::tcp::resolver::results_type&
 
 void Client::_handle_write() {
     this->_create_raw_request();
-    boost::asio::async_write(this->_socket, boost::asio::buffer(this->_raw_request_bytes),
-                             [this](const boost::system::error_code& ec, std::size_t transferred) {
-                                 if (ec) {
-                                     this->_ec = ec;
-                                     this->_context.stop();
-                                     return;
-                                 }
-                                 this->_handle_read();
-                             });
+    auto callback = [this](const boost::system::error_code& ec, std::size_t transferred) {
+        if (ec) {
+            this->_ec = ec;
+            this->_context.stop();
+            return;
+        }
+        this->_handle_read();
+    };
+    if (this->_url.get_schema() == URLSchema::http)
+        boost::asio::async_write(this->_socket, boost::asio::buffer(this->_raw_request_bytes), callback);
+    else
+        boost::asio::async_write(this->_ssl_socket, boost::asio::buffer(this->_raw_request_bytes), callback);
 }
 
 void Client::_handle_read() {
     auto tmp_buff = std::make_shared<std::vector<std::uint8_t>>();
     tmp_buff->resize(8192);
-    this->_socket.async_read_some(
-        boost::asio::buffer(*tmp_buff), [this, tmp_buff](const boost::system::error_code& ec, size_t transferred) {
-            if (!ec) {
-                this->_raw_result_bytes.reserve(this->_raw_result_bytes.size() + transferred);
-                this->_raw_result_bytes.insert(this->_raw_result_bytes.end(), tmp_buff->begin(),
-                                               tmp_buff->begin() + transferred);
-                this->_handle_read();
-                return;
-            }
-            if (ec == boost::asio::error::eof) {
-                this->_context.stop();
-                return;
-            }
-            this->_ec = ec;
+
+    auto callback = [this, tmp_buff](const boost::system::error_code& ec, size_t transferred) {
+        if (!ec) {
+            this->_raw_result_bytes.reserve(this->_raw_result_bytes.size() + transferred);
+            this->_raw_result_bytes.insert(this->_raw_result_bytes.end(), tmp_buff->begin(),
+                                           tmp_buff->begin() + transferred);
+            this->_handle_read();
+            return;
+        }
+        if (ec == boost::asio::error::eof) {
             this->_context.stop();
-        });
+            return;
+        }
+        this->_ec = ec;
+        this->_context.stop();
+    };
+    if (this->_url.get_schema() == URLSchema::http)
+        this->_socket.async_read_some(boost::asio::buffer(*tmp_buff), callback);
+    else
+        this->_ssl_socket.async_read_some(boost::asio::buffer(*tmp_buff), callback);
 }
 
 void Client::_create_raw_request() {

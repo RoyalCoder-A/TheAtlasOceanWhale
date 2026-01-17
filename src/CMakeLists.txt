@@ -5,4 +5,4 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/http_client)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/utils)
 
 add_executable(runner main.cpp)
-target_link_libraries(runner PRIVATE TAOW::cli_builder)
+target_link_libraries(runner PRIVATE TAOW::http_client)

@@ -7,7 +7,8 @@ using TAOW::http_client::HttpMethod;
 
 TEST_CASE("Http client test") {
     SECTION("Simple get request") {
-        Client client{TAOW::http_client::URL{"api.restful-api.dev", "/objects"}, HttpMethod::GET};
+        Client client{TAOW::http_client::URL{TAOW::http_client::URLSchema::https, "api.restful-api.dev", "/objects"},
+                      HttpMethod::GET};
         auto res = client.call();
         REQUIRE(res.body_text() == "Some placeholder!");
     }
