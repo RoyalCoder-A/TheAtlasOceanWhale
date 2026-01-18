@@ -3,6 +3,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/cli_builder)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/json)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/http_client)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/utils)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/logging)
 
 add_executable(runner main.cpp)
-target_link_libraries(runner PRIVATE TAOW::http_client)
+target_link_libraries(runner PRIVATE TAOW::logging)

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-add_library(taow_utils STATIC string_utils.cpp)
+add_library(taow_utils string_utils.cpp date_time_utils.cpp)
 add_library(TAOW::utils ALIAS taow_utils)
 
 target_include_directories(
