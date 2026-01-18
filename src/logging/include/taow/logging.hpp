@@ -36,20 +36,21 @@ struct Modifier {
 
 template <typename T> struct Logger {
     static void info(const std::stringstream& stream) {
-        Logger::log(stream, Modifier(ColorCode::BG_DEFAULT), Modifier(ColorCode::FG_GREEN));
+        Logger::log("INFO ", stream, Modifier(ColorCode::BG_DEFAULT), Modifier(ColorCode::FG_GREEN));
     }
     static void error(const std::stringstream& stream) {
-        Logger::log(stream, Modifier(ColorCode::BG_DEFAULT), Modifier(ColorCode::FG_RED));
+        Logger::log("ERROR", stream, Modifier(ColorCode::BG_DEFAULT), Modifier(ColorCode::FG_RED));
     }
     static void debug(const std::stringstream& stream) {
-        Logger::log(stream, Modifier(ColorCode::BG_DEFAULT), Modifier(ColorCode::FG_BLUE));
+        Logger::log("DEBUG", stream, Modifier(ColorCode::BG_DEFAULT), Modifier(ColorCode::FG_BLUE));
     }
 
   private:
     static constexpr std::string_view _class_name = TAOW::utils::get_type_name<T>();
-    static void log(const std::stringstream& stream, const Modifier& fg, const Modifier& bg) {
+    static void log(std::string_view prefix, const std::stringstream& stream, const Modifier& fg, const Modifier& bg) {
         std::stringstream os;
         os << fg << bg;
+        os << prefix << " | ";
         os << _class_name << " | " << get_now() << " | ";
         os << stream.rdbuf();
         os << "\n";
