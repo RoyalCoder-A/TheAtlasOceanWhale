@@ -4,12 +4,24 @@
 #include <mutex>
 #include <sstream>
 #include <thread>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 namespace TAOW::logging {
 
+enum LogLevel { DEBUG = 0, INFO = 1, ERROR = 2 };
+enum LogEnv { CONSOLE = 0 };
+
+struct LogConfig {
+    LogConfig() : level(LogLevel::INFO) {};
+    LogConfig(LogLevel level) : level(level) {}
+
+    LogLevel level;
+};
+
 struct LogManager {
     static LogManager instance;
-    void push(std::stringstream stream);
+    void push(LogLevel level, std::stringstream stream);
 
     ~LogManager() {
         {
@@ -20,15 +32,18 @@ struct LogManager {
         this->_worker_thread.join();
     }
 
+    void set_config(LogEnv env, LogConfig&& config);
+
   private:
-    LogManager() { _worker_thread = std::thread(&LogManager::worker, this); }
-    std::vector<std::stringstream> _log_queue;
+    LogManager() { _worker_thread = std::thread(&LogManager::console_worker, this); }
+    std::vector<std::pair<LogLevel, std::stringstream>> _log_queue;
     std::mutex _mutex;
     std::condition_variable _cv;
     std::thread _worker_thread;
     bool _is_finiesh{false};
+    std::unordered_map<LogEnv, LogConfig> _configs;
 
-    void worker();
+    void console_worker();
 };
 
 } // namespace TAOW::logging

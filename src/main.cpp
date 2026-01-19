@@ -4,6 +4,8 @@
 #include <thread>
 struct Test {
     Test() {
+        TAOW::logging::LogManager::instance.set_config(TAOW::logging::LogEnv::CONSOLE,
+                                                       TAOW::logging::LogConfig{TAOW::logging::LogLevel::DEBUG});
         std::stringstream log;
         log << "Meow!";
         TAOW::logging::Logger<Test>::info(log);

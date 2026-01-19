@@ -36,25 +36,38 @@ struct Modifier {
 
 template <typename T> struct Logger {
     static void info(const std::stringstream& stream) {
-        Logger::log("INFO ", stream, Modifier(ColorCode::BG_DEFAULT), Modifier(ColorCode::FG_GREEN));
+        Logger::log(LogLevel::INFO, stream, Modifier(ColorCode::BG_DEFAULT), Modifier(ColorCode::FG_GREEN));
     }
     static void error(const std::stringstream& stream) {
-        Logger::log("ERROR", stream, Modifier(ColorCode::BG_DEFAULT), Modifier(ColorCode::FG_RED));
+        Logger::log(LogLevel::ERROR, stream, Modifier(ColorCode::BG_DEFAULT), Modifier(ColorCode::FG_RED));
     }
     static void debug(const std::stringstream& stream) {
-        Logger::log("DEBUG", stream, Modifier(ColorCode::BG_DEFAULT), Modifier(ColorCode::FG_BLUE));
+        Logger::log(LogLevel::DEBUG, stream, Modifier(ColorCode::BG_DEFAULT), Modifier(ColorCode::FG_BLUE));
     }
 
   private:
     static constexpr std::string_view _class_name = TAOW::utils::get_type_name<T>();
-    static void log(std::string_view prefix, const std::stringstream& stream, const Modifier& fg, const Modifier& bg) {
+    static void log(LogLevel level, const std::stringstream& stream, const Modifier& fg, const Modifier& bg) {
+        std::string prefix;
+        switch (level) {
+        case LogLevel::INFO:
+            prefix = "INFO ";
+            break;
+        case DEBUG:
+            prefix = "DEBUG";
+            break;
+        case ERROR:
+            prefix = "ERROR";
+            break;
+            break;
+        }
         std::stringstream os;
         os << fg << bg;
         os << prefix << " | ";
         os << _class_name << " | " << get_now() << " | ";
         os << stream.rdbuf();
         os << "\n";
-        LogManager::instance.push(std::move(os));
+        LogManager::instance.push(level, std::move(os));
     }
     static std::string get_now() {
         auto now = std::chrono::system_clock::now();
