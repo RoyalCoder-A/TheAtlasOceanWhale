@@ -9,6 +9,7 @@
 #include <iostream>
 #include <ostream>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 namespace TAOW::logging {
@@ -35,43 +36,23 @@ struct Modifier {
 };
 
 template <typename T> struct Logger {
-    static void info(const std::stringstream& stream) {
-        Logger::log(LogLevel::INFO, stream, Modifier(ColorCode::BG_DEFAULT), Modifier(ColorCode::FG_GREEN));
+    static void info(std::stringstream stream) {
+        Logger::log(LogLevel::INFO, std::move(stream), Modifier(ColorCode::BG_DEFAULT), Modifier(ColorCode::FG_GREEN));
     }
-    static void error(const std::stringstream& stream) {
-        Logger::log(LogLevel::ERROR, stream, Modifier(ColorCode::BG_DEFAULT), Modifier(ColorCode::FG_RED));
+    static void error(std::stringstream stream) {
+        Logger::log(LogLevel::ERROR, std::move(stream), Modifier(ColorCode::BG_DEFAULT), Modifier(ColorCode::FG_RED));
     }
-    static void debug(const std::stringstream& stream) {
-        Logger::log(LogLevel::DEBUG, stream, Modifier(ColorCode::BG_DEFAULT), Modifier(ColorCode::FG_BLUE));
+    static void debug(std::stringstream stream) {
+        Logger::log(LogLevel::DEBUG, std::move(stream), Modifier(ColorCode::BG_DEFAULT), Modifier(ColorCode::FG_BLUE));
     }
 
   private:
     static constexpr std::string_view _class_name = TAOW::utils::get_type_name<T>();
-    static void log(LogLevel level, const std::stringstream& stream, const Modifier& fg, const Modifier& bg) {
-        std::string prefix;
-        switch (level) {
-        case LogLevel::INFO:
-            prefix = "INFO ";
-            break;
-        case DEBUG:
-            prefix = "DEBUG";
-            break;
-        case ERROR:
-            prefix = "ERROR";
-            break;
-            break;
+    static void log(LogLevel level, std::stringstream stream, const Modifier& fg, const Modifier& bg) {
+        if (!LogManager::instance) {
+            throw std::runtime_error("Log manager has not been instantiated!");
         }
-        std::stringstream os;
-        os << fg << bg;
-        os << prefix << " | ";
-        os << _class_name << " | " << get_now() << " | ";
-        os << stream.rdbuf();
-        os << "\n";
-        LogManager::instance.push(level, std::move(os));
-    }
-    static std::string get_now() {
-        auto now = std::chrono::system_clock::now();
-        return TAOW::utils::time_point_to_string(now, "%Y-%m-%d %H:%M:%S");
+        LogManager::instance->push(level, _class_name, std::chrono::system_clock::now(), std::move(stream));
     }
 };
 
