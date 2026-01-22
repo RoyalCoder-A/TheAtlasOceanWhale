@@ -3,9 +3,9 @@
 #include <chrono>
 #include <condition_variable>
 #include <filesystem>
+#include <memory>
 #include <mutex>
 #include <optional>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -31,6 +31,29 @@ struct FileLogConfig {
     LogLevel level;
     std::filesystem::path log_directory;
     std::optional<std::string> file_prefix;
+};
+
+struct LogRecord {
+    friend struct LogManager;
+    struct ConstructorKey {
+        friend struct LogManager;
+
+      private:
+        explicit ConstructorKey() {}
+    };
+    explicit LogRecord(LogRecord::ConstructorKey, LogLevel level, std::string_view class_name,
+                       std::chrono::system_clock::time_point date_time, std::string message)
+        : _level{level}, _class_name{class_name}, _date_time{std::move(date_time)}, _message{std::move(message)} {}
+
+    LogRecord(const LogRecord& obj) = delete;
+    LogRecord(LogRecord&& obj) = default;
+    ~LogRecord() = default;
+
+  private:
+    LogLevel _level;
+    std::string_view _class_name;
+    std::chrono::system_clock::time_point _date_time;
+    std::string _message;
 };
 
 struct LogManager {
@@ -60,24 +83,28 @@ struct LogManager {
 
     ~LogManager() {
         {
-            std::lock_guard<std::mutex> lock{_mutex};
+            std::scoped_lock multi_lock{_console_mutex, _file_mutex};
             _is_finiesh = true;
-            this->_cv.notify_all();
+            _console_cv.notify_all();
+            _file_cv.notify_all();
         }
         for (auto& worker : this->_worker_threads) {
             worker.join();
         }
     }
 
-    void push(LogLevel level, std::string_view class_name, std::chrono::system_clock::time_point date_time,
-              std::stringstream stream);
+    void push(LogLevel level, std::chrono::system_clock::time_point date_time, std::string_view class_name,
+              std::string message);
 
   private:
     std::optional<ConsoleLogConfig> _console_config;
     std::optional<FileLogConfig> _file_config;
-    std::vector<std::pair<LogLevel, std::stringstream>> _log_queue;
-    std::mutex _mutex;
-    std::condition_variable _cv;
+    std::vector<std::shared_ptr<LogRecord>> _console_log_queue;
+    std::vector<std::shared_ptr<LogRecord>> _file_log_queue;
+    std::mutex _console_mutex;
+    std::condition_variable _console_cv;
+    std::mutex _file_mutex;
+    std::condition_variable _file_cv;
     std::vector<std::thread> _worker_threads;
     bool _is_finiesh{false};
 

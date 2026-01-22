@@ -1,18 +1,13 @@
+#include "taow/log_manager.hpp"
 #include "taow/logging.hpp"
-#include <chrono>
-#include <sstream>
-#include <thread>
+#include <filesystem>
 struct Test {
     Test() {
-        TAOW::logging::LogManager::instance.set_config(TAOW::logging::LogEnv::CONSOLE,
-                                                       TAOW::logging::LogConfig{TAOW::logging::LogLevel::DEBUG});
-        std::stringstream log;
-        log << "Meow!";
-        TAOW::logging::Logger<Test>::info(log);
-        std::this_thread::sleep_for(std::chrono::seconds(5));
-        std::stringstream new_log;
-        new_log << "Meow Meow!";
-        TAOW::logging::Logger<Test>::debug(new_log);
+        TAOW::logging::LogManager::instantiate(TAOW::logging::ConsoleLogConfig{},
+                                               TAOW::logging::FileLogConfig{std::filesystem::current_path() / "logs"});
+        TAOW::logging::Logger<Test>::info("Meow!");
+        TAOW::logging::Logger<Test>::deubg("Another meow!");
+        TAOW::logging::Logger<Test>::error("And another!");
     }
 };
 
