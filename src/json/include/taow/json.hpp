@@ -106,7 +106,7 @@ using json = nlohmann::json;
         }                                                                                                              \
     }
 
-#define CREATE_FULL_JSON_STRUCT(struct_name, INIT_DEFINITION)                                                          \
+#define CREATE_FULL_JSON_STRUCT(struct_name, INIT_DEFINITIONS)                                                         \
     struct struct_name {                                                                                               \
         INIT_DEFINITIONS(SET_PROPERTY)                                                                                 \
         json to_json() const {                                                                                         \
