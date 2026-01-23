@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-add_library(taow_logging log_manager.cpp)
+add_library(taow_logging log_manager.cpp log_file_handler.cpp)
 add_library(TAOW::logging ALIAS taow_logging)
 target_include_directories(
     taow_logging PUBLIC

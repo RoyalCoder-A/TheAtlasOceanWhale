@@ -1,14 +1,14 @@
 #include "taow/log_manager.hpp"
 #include "taow/date_time_utils.hpp"
+#include "taow/log_file_handler.hpp";
 #include "taow/logging.hpp"
 #include <chrono>
-#include <fstream>
-#include <ios>
 #include <iostream>
 #include <memory>
 #include <mutex>
 #include <optional>
 #include <ostream>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -96,12 +96,8 @@ void LogManager::file_worker() {
         throw std::runtime_error("Panic! no file configuration provided but worker triggered!");
     }
     auto config = _file_config.value();
-    auto file_name = config.file_prefix ? config.file_prefix.value() + "-log.log" : "log.log";
-    auto log_address = config.log_directory / file_name;
-    std::ofstream file_stream{log_address, std::ios::app};
-    if (!file_stream.is_open()) {
-        throw std::runtime_error("Panic! couldn't create " + log_address.string());
-    }
+    LogDirectoryManager file_handler{config.log_directory, config.max_files_count, config.max_file_size_in_mb,
+                                     config.file_prefix ? config.file_prefix.value() : ""};
     bool should_break{false};
     while (true) {
         std::vector<std::shared_ptr<LogRecord>> logs;
@@ -113,6 +109,8 @@ void LogManager::file_worker() {
                 should_break = true;
             }
         }
+        file_handler.clean_directory();
+        file_handler.update_current_file();
         for (auto& log : logs) {
             std::string_view prefix;
             switch (log->_level) {
@@ -126,15 +124,15 @@ void LogManager::file_worker() {
                 prefix = "DEBUG";
                 break;
             }
-            file_stream << "[" << prefix << "] " << log->_class_name << " "
-                        << TAOW::utils::time_point_to_string(log->_date_time, "%Y-%m-%d %H:%M:%S") << " "
-                        << log->_message << "\n";
+            std::stringstream ss;
+            ss << "[" << prefix << "] " << log->_class_name << " "
+               << TAOW::utils::time_point_to_string(log->_date_time, "%Y-%m-%d %H:%M:%S") << " " << log->_message
+               << "\n";
+            file_handler.write_to_last_file(ss.str());
         }
         if (should_break)
             break;
     }
-    file_stream << std::endl;
-    file_stream.close();
 }
 
 } // namespace TAOW::logging

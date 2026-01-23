@@ -25,12 +25,16 @@ struct ConsoleLogConfig {
 struct FileLogConfig {
 
     FileLogConfig(std::filesystem::path log_directory, LogLevel level = LogLevel::INFO,
-                  std::optional<std::string> file_prefix = std::nullopt)
-        : log_directory{log_directory}, level{level}, file_prefix{file_prefix} {}
+                  std::optional<std::string> file_prefix = std::nullopt, float max_file_size_in_mb = 5,
+                  int max_files_count = 5)
+        : log_directory{log_directory}, level{level}, file_prefix{file_prefix},
+          max_file_size_in_mb{max_file_size_in_mb}, max_files_count{max_files_count} {}
 
     LogLevel level;
     std::filesystem::path log_directory;
     std::optional<std::string> file_prefix;
+    float max_file_size_in_mb;
+    int max_files_count;
 };
 
 struct LogRecord {
