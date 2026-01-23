@@ -1,6 +1,6 @@
 #include "taow/log_manager.hpp"
 #include "taow/date_time_utils.hpp"
-#include "taow/log_file_handler.hpp";
+#include "taow/log_file_handler.hpp"
 #include "taow/logging.hpp"
 #include <chrono>
 #include <iostream>
