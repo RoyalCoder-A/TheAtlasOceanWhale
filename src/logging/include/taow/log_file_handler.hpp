@@ -25,13 +25,13 @@ struct LogDirectoryManager {
     void update_current_file();
 
   private:
-    const std::filesystem::path _directory_path;
+    std::filesystem::path _directory_path;
     const int _max_files;
     const float _max_file_size;
     const std::string _file_prefix;
     std::ofstream _current_file_stream;
 
-    void fetch_directory_log_files(std::vector<std::pair<int, const std::filesystem::path>>& result) const;
+    void fetch_directory_log_files(std::vector<std::pair<int, std::filesystem::path>>& result) const;
 };
 
 } // namespace TAOW::logging

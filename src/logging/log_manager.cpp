@@ -83,7 +83,7 @@ void LogManager::console_worker() {
             std::cout << get_color_code(ColorCode::BG_DEFAULT) << get_color_code(code) << "[" << prefix << "] "
                       << log->_class_name << " "
                       << TAOW::utils::time_point_to_string(log->_date_time, "%Y-%m-%d %H:%M:%S") << " " << log->_message
-                      << "\n";
+                      << std::endl;
         }
         std::this_thread::sleep_for(std::chrono::seconds{2});
         if (should_break)
@@ -112,6 +112,9 @@ void LogManager::file_worker() {
         file_handler.clean_directory();
         file_handler.update_current_file();
         for (auto& log : logs) {
+            if (log->_level < config.level)
+                continue;
+
             std::string_view prefix;
             switch (log->_level) {
             case LogLevel::INFO:
@@ -126,8 +129,7 @@ void LogManager::file_worker() {
             }
             std::stringstream ss;
             ss << "[" << prefix << "] " << log->_class_name << " "
-               << TAOW::utils::time_point_to_string(log->_date_time, "%Y-%m-%d %H:%M:%S") << " " << log->_message
-               << "\n";
+               << TAOW::utils::time_point_to_string(log->_date_time, "%Y-%m-%d %H:%M:%S") << " " << log->_message;
             file_handler.write_to_last_file(ss.str());
         }
         if (should_break)
