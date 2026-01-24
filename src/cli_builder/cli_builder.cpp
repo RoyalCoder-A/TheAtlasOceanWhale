@@ -1,4 +1,5 @@
 #include "taow/cli_builder.hpp"
+#include "taow/exceptions.hpp"
 #include <cstddef>
 #include <iostream>
 #include <optional>
@@ -47,35 +48,35 @@ std::optional<bool> get_option<bool>(std::string_view option_name,
 
 template <> std::string get_arg<std::string>(std::size_t idx, const std::vector<std::string>& args) {
     if (idx >= args.size()) {
-        throw std::runtime_error("Args not passed correctly! see --help");
+        throw ArgsNotCorrect("Args not passed correctly! see --help");
     }
     return args[idx];
 }
 
 template <> int get_arg<int>(std::size_t idx, const std::vector<std::string>& args) {
     if (idx >= args.size()) {
-        throw std::runtime_error("Args not passed correctly! see --help");
+        throw ArgsNotCorrect("Args not passed correctly! see --help");
     }
     return std::stoi(args[idx]);
 }
 
 template <> double get_arg<double>(std::size_t idx, const std::vector<std::string>& args) {
     if (idx >= args.size()) {
-        throw std::runtime_error("Args not passed correctly! see --help");
+        throw ArgsNotCorrect("Args not passed correctly! see --help");
     }
     return std::stod(args[idx]);
 }
 
 template <> bool get_arg<bool>(std::size_t idx, const std::vector<std::string>& args) {
     if (idx >= args.size()) {
-        throw std::runtime_error("Args not passed correctly! see --help");
+        throw ArgsNotCorrect("Args not passed correctly! see --help");
     }
     return args[idx] == "1" || args[idx] == "t" || args[idx] == "y";
 }
 
 int CliRegistry::run(int argc, char** argv) {
     if (argc < 2) {
-        throw std::runtime_error("No args passed!");
+        throw ArgsNotCorrect("No args passed!");
     }
     std::vector<std::string> raw_args{argv + 1, argv + argc};
     for (const auto& [k, v] : CliRegistry::commands) {
@@ -83,7 +84,7 @@ int CliRegistry::run(int argc, char** argv) {
     }
     auto found_command = CliRegistry::commands.find(raw_args[0]);
     if (found_command == CliRegistry::commands.end()) {
-        throw std::runtime_error("No command found for " + raw_args[0]);
+        throw CommandNotFound("No command found for " + raw_args[0]);
     }
     std::vector<std::string> args;
     std::unordered_map<std::string, std::string> options;

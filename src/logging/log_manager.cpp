@@ -1,5 +1,6 @@
 #include "taow/log_manager.hpp"
 #include "taow/date_time_utils.hpp"
+#include "taow/exception.hpp"
 #include "taow/log_file_handler.hpp"
 #include "taow/logging.hpp"
 #include <chrono>
@@ -9,7 +10,6 @@
 #include <optional>
 #include <ostream>
 #include <sstream>
-#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -24,7 +24,7 @@ std::optional<LogManager> LogManager::instance;
 
 void LogManager::instantiate(std::optional<ConsoleLogConfig> console_config, std::optional<FileLogConfig> file_config) {
     if (LogManager::instance) {
-        throw std::runtime_error("Can't re-instantiate logger!");
+        throw LogReinitializerError("Can't re-instantiate logger!");
     }
     LogManager::instance.emplace(ConstructorKey{}, console_config, file_config);
 }
@@ -47,7 +47,7 @@ void LogManager::push(LogLevel level, std::chrono::system_clock::time_point date
 
 void LogManager::console_worker() {
     if (!_console_config) {
-        throw std::runtime_error("Panic! console config not set but its worker has been triggered!");
+        throw LogConfigNotFound("Panic! console config not set but its worker has been triggered!");
     }
     auto config = _console_config.value();
     bool should_break{false};
@@ -93,7 +93,7 @@ void LogManager::console_worker() {
 
 void LogManager::file_worker() {
     if (!_file_config) {
-        throw std::runtime_error("Panic! no file configuration provided but worker triggered!");
+        throw LogConfigNotFound("Panic! no file configuration provided but worker triggered!");
     }
     auto config = _file_config.value();
     LogDirectoryManager file_handler{config.log_directory, config.max_files_count, config.max_file_size_in_mb,
