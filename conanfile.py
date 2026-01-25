@@ -7,7 +7,6 @@ class TAOWRecipe(ConanFile):
     generators = "CMakeDeps", "CMakeToolchain"
 
     def requirements(self):
-        self.requires("catch2/3.12.0")
         self.requires("nlohmann_json/3.12.0")
         self.requires("boost/1.90.0")
         self.requires("zlib/1.3.1")
