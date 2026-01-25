@@ -25,7 +25,7 @@ void LogDirectoryManager::clean_directory() const {
     }
 }
 
-void LogDirectoryManager::write_to_last_file(std::string_view message) { _current_file_stream << message << std::endl; }
+void LogDirectoryManager::write_to_last_file(std::string_view message) { _current_file_stream << message << "\n"; }
 
 void LogDirectoryManager::update_current_file() {
     std::vector<std::pair<int, std::filesystem::path>> log_files{};

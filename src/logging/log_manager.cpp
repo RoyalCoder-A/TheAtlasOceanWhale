@@ -83,9 +83,8 @@ void LogManager::console_worker() {
             std::cout << get_color_code(ColorCode::BG_DEFAULT) << get_color_code(code) << "[" << prefix << "] "
                       << log->_class_name << " "
                       << TAOW::utils::time_point_to_string(log->_date_time, "%Y-%m-%d %H:%M:%S") << " " << log->_message
-                      << std::endl;
+                      << "\n";
         }
-        std::this_thread::sleep_for(std::chrono::seconds{2});
         if (should_break)
             break;
     }

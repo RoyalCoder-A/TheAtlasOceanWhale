@@ -7,3 +7,5 @@ target_include_directories(
     $<INSTALL_INTERFACE:include>
 )
 target_link_libraries(taow_logging PUBLIC TAOW::utils)
+install(TARGETS taow_logging DESTINATION lib)
+install(DIRECTORY include/ DESTINATION include)
