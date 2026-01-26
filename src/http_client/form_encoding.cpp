@@ -1,6 +1,6 @@
 #include "taow/form_encoding.hpp"
+#include "taow/http_client_exceptions.hpp"
 #include <cctype>
-#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -51,49 +51,49 @@ std::string FormRequestItem::to_form_string(std::string_view parent_key) const {
 
 std::string& FormRequestItem::get() {
     if (!this->is_scalar())
-        throw std::runtime_error("Not an scalar!");
+        throw FormParsingError("Not an scalar!");
     return std::get<std::string>(this->_value);
 }
 
 const std::string& FormRequestItem::get() const {
     if (!this->is_scalar())
-        throw std::runtime_error("Not an scalar!");
+        throw FormParsingError("Not an scalar!");
     return std::get<std::string>(this->_value);
 }
 
 FormRequestItem& FormRequestItem::get(std::size_t idx) {
     if (!this->is_array())
-        throw std::runtime_error("Not an array!");
+        throw FormParsingError("Not an array!");
     return std::get<std::vector<FormRequestItem>>(this->_value)[idx];
 }
 
 const FormRequestItem& FormRequestItem::get(std::size_t idx) const {
     if (!this->is_array())
-        throw std::runtime_error("Not an array!");
+        throw FormParsingError("Not an array!");
     return std::get<std::vector<FormRequestItem>>(this->_value)[idx];
 }
 
 FormRequestItem& FormRequestItem::get(std::string_view key) {
     if (!this->is_object())
-        throw std::runtime_error("Not an object!");
+        throw FormParsingError("Not an object!");
     return std::get<std::unordered_map<std::string, FormRequestItem>>(this->_value).at(std::string{key});
 }
 
 const FormRequestItem& FormRequestItem::get(std::string_view key) const {
     if (!this->is_object())
-        throw std::runtime_error("Not an object!");
+        throw FormParsingError("Not an object!");
     return std::get<std::unordered_map<std::string, FormRequestItem>>(this->_value).at(std::string{key});
 }
 
 std::string FormRequestItem::_handle_scalar_string(std::string_view parent_key) const {
     if (!this->is_scalar())
-        throw std::runtime_error("Not an scalar!");
+        throw FormParsingError("Not an scalar!");
     return std::string{encode_url(parent_key)} + "=" + encode_url(std::get<std::string>(this->_value));
 }
 
 std::string FormRequestItem::_handle_object_string(std::string_view parent_key) const {
     if (!this->is_object())
-        throw std::runtime_error("Not an object!");
+        throw FormParsingError("Not an object!");
     const auto& objects = std::get<std::unordered_map<std::string, FormRequestItem>>(this->_value);
     std::string result{};
     for (const auto& [key, val] : objects) {
@@ -108,7 +108,7 @@ std::string FormRequestItem::_handle_object_string(std::string_view parent_key) 
 
 std::string FormRequestItem::_handle_array_string(std::string_view parent_key) const {
     if (!this->is_array())
-        throw std::runtime_error("Not an array!");
+        throw FormParsingError("Not an array!");
     const auto& objects = std::get<std::vector<FormRequestItem>>(this->_value);
     std::string result{};
     for (int i = 0; i < objects.size(); ++i) {

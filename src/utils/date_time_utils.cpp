@@ -1,8 +1,8 @@
 #include "taow/date_time_utils.hpp"
+#include "taow/utils_exception.hpp"
 #include <ctime>
 #include <iomanip>
 #include <sstream>
-#include <stdexcept>
 #include <string>
 
 namespace TAOW::utils {
@@ -25,7 +25,7 @@ std::chrono::system_clock::time_point string_to_time_point(std::string date_time
     std::tm time_struct;
     ss >> std::get_time(&time_struct, format.c_str());
     if (ss.fail()) {
-        throw std::runtime_error("Failed to parse date! date: " + date_time + "format: " + format);
+        throw ParseDateError("Failed to parse date! date: " + date_time + "format: " + format);
     }
     auto in_time_t = std::mktime(&time_struct);
     return std::chrono::system_clock::from_time_t(in_time_t);

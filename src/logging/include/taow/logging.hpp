@@ -1,11 +1,11 @@
 #pragma once
 
 #include "taow/log_manager.hpp"
+#include "taow/logging_exception.hpp"
 #include "taow/type_utils.hpp"
 #include <chrono>
 #include <cstdio>
 #include <ctime>
-#include <stdexcept>
 #include <string>
 #include <string_view>
 namespace TAOW::logging {
@@ -30,7 +30,7 @@ template <typename T> struct Logger {
     static constexpr std::string_view _class_name = TAOW::utils::get_type_name<T>();
     static void log(LogLevel level, std::string message) {
         if (!LogManager::instance) {
-            throw std::runtime_error("Log manager has not been instantiated!");
+            throw LogManagerNotInstantiatedError("Log manager has not been instantiated!");
         }
         LogManager::instance->push(level, std::chrono::system_clock::now(), _class_name, std::move(message));
     }

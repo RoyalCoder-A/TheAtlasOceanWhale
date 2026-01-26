@@ -1,12 +1,12 @@
 #pragma once
 
+#include "taow/logging_exception.hpp"
 #include <chrono>
 #include <condition_variable>
 #include <filesystem>
 #include <memory>
 #include <mutex>
 #include <optional>
-#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -70,7 +70,7 @@ struct LogManager {
     LogManager(ConstructorKey, std::optional<ConsoleLogConfig> console_config,
                std::optional<FileLogConfig> file_config) {
         if (!console_config && !file_config) {
-            throw std::runtime_error("Can't instantiate logger without any configs!");
+            throw EmptyInitializerError("Can't instantiate logger without any configs!");
         }
         if (console_config) {
             _console_config = console_config;

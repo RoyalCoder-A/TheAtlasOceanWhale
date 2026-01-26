@@ -1,4 +1,5 @@
 #include "taow/http_client.hpp"
+#include "taow/http_client_exceptions.hpp"
 #include "taow/utils_macros.hpp"
 #include <algorithm>
 #include <cctype>
@@ -8,7 +9,6 @@
 #include <cstring>
 #include <iterator>
 #include <regex>
-#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -55,7 +55,7 @@ std::vector<std::uint8_t> gunzip(const std::vector<std::uint8_t>& input) {
     zs.avail_in = static_cast<uInt>(input.size());
     int rc = inflateInit2(&zs, 16 + MAX_WBITS);
     if (rc != Z_OK)
-        throw std::runtime_error("inflateInit2 failed");
+        throw DecompressError("inflateInit2 failed");
 
     std::vector<std::uint8_t> out;
     out.reserve(input.size() * 2);
@@ -66,7 +66,7 @@ std::vector<std::uint8_t> gunzip(const std::vector<std::uint8_t>& input) {
         rc = inflate(&zs, Z_NO_FLUSH);
         if (rc != Z_OK && rc != Z_STREAM_END) {
             inflateEnd(&zs);
-            throw std::runtime_error("inflate failed");
+            throw DecompressError("inflate failed");
         }
         std::size_t produced = sizeof(buffer) - zs.avail_out;
         out.insert(out.end(), buffer, buffer + produced);
@@ -86,7 +86,7 @@ std::vector<std::uint8_t> handle_decompressing(const std::unordered_map<std::str
     for (auto i = encodings.rbegin(); i != encodings.rend(); ++i) {
         auto encoding_enum = CompressAlgos_from_string(trim(*i));
         if (!encoding_enum)
-            throw std::runtime_error("Can't decompress " + *i);
+            throw DecompressError("Can't decompress " + *i);
         switch (encoding_enum.value()) {
         case gzip:
             result = gunzip(result);
@@ -105,12 +105,12 @@ std::vector<std::uint8_t> process_chunked_response(const std::vector<uint8_t>& b
     while (true) {
         auto eol = std::search(sol, body_bytes.end(), line_separator.begin(), line_separator.end());
         if (eol == body_bytes.end())
-            throw std::runtime_error("No new line found, corrupted chunk response!");
+            throw BrokenChunkError("No new line found, corrupted chunk response!");
         std::size_t chunk_size{};
         const auto chunk_size_part = reinterpret_cast<const char*>(&*std::find(sol, eol, ';'));
         const auto [ptr, ec] = std::from_chars(reinterpret_cast<const char*>(&*sol), chunk_size_part, chunk_size, 16);
         if (ec != std::error_code{} || ptr != chunk_size_part)
-            throw std::runtime_error("Can't cast chunk size, corrupted chunk!");
+            throw BrokenChunkError("Can't cast chunk size, corrupted chunk!");
         const auto data_part_beginning = eol + line_separator.size();
         if (chunk_size == 0) {
             const auto data_part_ending =
@@ -162,7 +162,7 @@ Response Response::from_raw_bytes(const std::vector<std::uint8_t>& raw_bytes) {
     const std::vector<std::uint8_t> del{header_delimiter_str.begin(), header_delimiter_str.end()};
     const auto end_of_header_it = std::search(raw_bytes.begin(), raw_bytes.end(), del.begin(), del.end());
     if (end_of_header_it == raw_bytes.end()) {
-        throw std::runtime_error("Broken response!");
+        throw BrokenResponseError("Broken response!");
     }
     std::string header_str{raw_bytes.begin(), end_of_header_it};
     const auto status_result = process_header_status_part(header_str);
@@ -186,7 +186,7 @@ std::string Response::body_text() const {
 }
 void Response::raise_for_status() const {
     if (this->_status_code > 299 || this->_status_code < 200) {
-        throw std::runtime_error("Http " + std::to_string(this->_status_code) + " error!");
+        throw HttpError("Http " + std::to_string(this->_status_code) + " error!", this->_status_code);
     }
 }
 

@@ -1,5 +1,6 @@
 #include "taow/http_client.hpp"
 #include "boost/asio/ssl/verify_mode.hpp"
+#include "taow/http_client_exceptions.hpp"
 #include "taow/string_utils.hpp"
 #include "taow/url.hpp"
 #include <boost/asio.hpp>
@@ -9,7 +10,6 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
-#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -44,7 +44,7 @@ Response Client::call(std::chrono::milliseconds timeout) {
     this->_context.run();
     _timer.cancel();
     if (this->_ec)
-        throw std::runtime_error(this->_ec->message());
+        throw HttpClientError(this->_ec->message());
     return Response::from_raw_bytes(this->_raw_result_bytes);
 }
 

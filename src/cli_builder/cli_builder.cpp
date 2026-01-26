@@ -1,5 +1,5 @@
 #include "taow/cli_builder.hpp"
-#include "taow/exceptions.hpp"
+#include "taow/cli_builder_exceptions.hpp"
 #include <cstddef>
 #include <iostream>
 #include <optional>
