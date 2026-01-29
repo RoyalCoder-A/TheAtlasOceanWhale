@@ -1,3 +1,7 @@
+/**
+ * @file cli_builder_macros.hpp
+ * @brief Macros for defining CLI commands and arguments.
+ */
 #pragma once
 #include "taow/cli_builder.hpp"
 #include <memory>
@@ -29,6 +33,38 @@
 #define EXTRACT_BOOL_ARG(name, idx) this->name = TAOW::cli_builder::get_arg<bool>(idx, args);
 #define ARG_EXTRACTOR(name, idx, string_int_double_bool) EXTRACT_##string_int_double_bool##_ARG(name, idx)
 
+/**
+ * @brief This macro will register a command to the command list
+ *
+ * @param OPTION_DEFINITION This will accept a X-MACRO to define the options
+ * * **Contract:** This macro will accept single parameter `X`.
+ * * Inside, it must call `X(field_name, field_type)` for each option.
+ * - `field_name`: The name of the variable to generate
+ * - `field_type`: It must be one of STRING, INT, DOUBLE, BOOL
+ * **Examples:**
+ * @code
+ * #define MY_OPTS(X) \
+ * X(host, STRING) \
+ * X(port, INT) \
+ * X(VERBOSE, bool)
+ * @endcode
+ *
+ * @param ARG_DEFINITION This is as same as options, just telling about args instead of options, and has an extra idx
+ * which is telling number of current arg
+ * * **Contract:** X_MACRO contract for this param is as same as options, with an idx, it should be call `X(field_name,
+ * idx, field_type)`
+ * - `field_name`: The name of the variable to generate
+ * - `idx`: The index of this arg
+ * - `field_type`: One of STRING, INT, DOUBLE, BOOL
+ * * **Examples:**
+ * @code
+ * #define MY_ARGS(X) \
+ *  X(host, 1, STRING) \
+ *  X(port, 2, INT)
+ * @endcode
+ *
+ * @return Nothing
+ **/
 #define CLI_COMMAND(name, OPTION_DEFINITION, ARG_DEFINITION)                                                           \
     struct name##_options : TAOW::cli_builder::CliBuilderOptionBase {                                                  \
         OPTION_DEFINITION(DEFINE_OPTIONS)                                                                              \
